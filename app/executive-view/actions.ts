@@ -96,31 +96,60 @@ export async function getExecutiveData() {
 
     const remaining = totalBudget - totalSpent
 
-    // 2. Fetch Tasks Stats
+    // 2. Fetch Tasks Stats (Detailed)
     const { data: tasks } = await supabase
         .from('tasks')
         .select('status')
 
-    const totalTasks = tasks?.length || 0
-    const completedTasks = tasks?.filter(t => t.status === 'done').length || 0
-    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+    const taskStats = {
+        total: tasks?.length || 0,
+        todo: tasks?.filter(t => t.status === 'todo').length || 0,
+        doing: tasks?.filter(t => t.status === 'doing').length || 0,
+        review: tasks?.filter(t => t.status === 'review').length || 0,
+        done: tasks?.filter(t => t.status === 'done').length || 0,
+    }
 
-    // 3. Fetch KPI Stats
+    // 3. Fetch KPI Stats (Detailed)
+    // Fetch top 5 KPIs
     const { data: kpis } = await supabase
         .from('kpis')
-        .select('current_value, target_value')
+        .select('name, current_value, target_value, unit')
+        .limit(5)
 
     let avgKpi = 0
+    let kpiDetails: any[] = []
+
     if (kpis && kpis.length > 0) {
-        const totalPercent = kpis.reduce((sum, k) => {
-            const pct = k.target_value > 0 ? (k.current_value / k.target_value) * 100 : 0
-            return sum + Math.min(pct, 100) // Cap at 100% for avg calculation stability
-        }, 0)
+        let totalPercent = 0
+        kpiDetails = kpis.map(k => {
+            const progress = k.target_value > 0 ? Math.round((k.current_value / k.target_value) * 100) : 0
+            totalPercent += Math.min(progress, 100)
+            return {
+                ...k,
+                progress
+            }
+        })
         avgKpi = Math.round(totalPercent / kpis.length)
     }
 
+    // 4. Fetch Top Spending Items (For "Check Budget")
+    // Get top 5 most expensive items
+    const { data: topSpending } = await supabase
+        .from('content_items')
+        .select('title, actual_cost, platform, campaign_id')
+        .gt('actual_cost', 0)
+        .order('actual_cost', { ascending: false })
+        .limit(5)
 
-    // ... calculations ...
+    // Map campaign names to spending items if possible
+    const spendingWithCampaignName = topSpending?.map(item => {
+        const campaign = campaigns?.find(c => c.id === item.campaign_id)
+        return {
+            ...item,
+            campaign_name: campaign?.name || 'Unknown'
+        }
+    }) || []
+
 
     // Prepare detailed campaign data
     const campaignDetails = campaigns?.map(c => {
@@ -144,17 +173,17 @@ export async function getExecutiveData() {
             total: totalBudget,
             spent: totalSpent,
             remaining: remaining,
-            campaigns: campaignDetails, // New detailed list
+            campaigns: campaignDetails,
+            topSpending: spendingWithCampaignName, // New detailed spending
         },
         kpis: {
             avgAchievement: avgKpi,
             totalKpis: kpis?.length || 0,
-            // You could expand this with more detailed KPI lists later
+            details: kpiDetails, // New detailed list
         },
         tasks: {
-            total: totalTasks,
-            completed: completedTasks,
-            rate: completionRate
+            ...taskStats, // Expanded stats
+            rate: taskStats.total > 0 ? Math.round((taskStats.done / taskStats.total) * 100) : 0
         }
     }
 }

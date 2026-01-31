@@ -72,11 +72,11 @@ export default async function ExecutiveDashboardPage() {
                     </div>
 
                     {/* Campaign Detail Table */}
-                    <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-lg border shadow-sm overflow-hidden mb-8">
                         <div className="p-4 border-b bg-gray-50/50">
                             <h3 className="font-semibold">Chi tiết theo chiến dịch</h3>
                         </div>
-                        <div className="p-0">
+                        <div className="p-0 overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead className="bg-gray-50 border-b">
                                     <tr>
@@ -129,6 +129,53 @@ export default async function ExecutiveDashboardPage() {
                             </table>
                         </div>
                     </div>
+
+                    {/* Top Spending Items */}
+                    <div className="bg-white rounded-lg border shadow-sm overflow-hidden text-sm">
+                        <div className="p-4 border-b bg-gray-50/50 flex justify-between items-center">
+                            <h3 className="font-semibold flex items-center gap-2">
+                                <DollarSign className="w-4 h-4 text-orange-500" />
+                                Hạng mục chi phí cao nhất
+                            </h3>
+                            <span className="text-xs text-muted-foreground">Top 5 Content Items</span>
+                        </div>
+                        <div className="p-0 overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b">
+                                    <tr>
+                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Hạng mục / Content</th>
+                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Chiến dịch</th>
+                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Kênh</th>
+                                        <th className="h-10 px-4 text-right font-medium text-muted-foreground">Chi phí thực tế</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.budget.topSpending && data.budget.topSpending.length > 0 ? (
+                                        data.budget.topSpending.map((item: any, idx: number) => (
+                                            <tr key={idx} className="border-b last:border-0 hover:bg-gray-50/50">
+                                                <td className="p-4 font-medium">{item.title}</td>
+                                                <td className="p-4 text-muted-foreground">{item.campaign_name}</td>
+                                                <td className="p-4">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground capitalize">
+                                                        {item.platform}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-right font-semibold text-gray-900">
+                                                    {item.actual_cost?.toLocaleString()} đ
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                                                Chưa có dữ liệu chi tiêu
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </section>
 
                 <Separator />
@@ -141,69 +188,71 @@ export default async function ExecutiveDashboardPage() {
                     </h2>
                     <div className="grid gap-6 md:grid-cols-2">
                         {/* KPI Stats */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Tổng quan KPI</CardTitle>
+                        <Card className="h-full">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base flex justify-between items-center">
+                                    <span>Chi tiết KPI</span>
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                        TB: <strong className="text-primary">{data.kpis.avgAchievement}%</strong>
+                                    </span>
+                                </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Mức độ hoàn thành trung bình</span>
-                                    <span className="text-2xl font-bold">{data.kpis.avgAchievement}%</span>
-                                </div>
-                                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-primary transition-all duration-500"
-                                        style={{ width: `${Math.min(data.kpis.avgAchievement, 100)}%` }}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
-                                    <div>
-                                        <div className="text-sm text-muted-foreground">Số lượng KPI</div>
-                                        <div className="text-xl font-semibold">{data.kpis.totalKpis}</div>
-                                    </div>
-                                    <div>
-                                        <div className="text-sm text-muted-foreground">Đánh giá chung</div>
-                                        <div className="text-xl font-semibold text-green-600">
-                                            {data.kpis.avgAchievement >= 80 ? 'Tốt' : data.kpis.avgAchievement >= 50 ? 'Khá' : 'Cần cố gắng'}
+                            <CardContent className="space-y-5">
+                                {data.kpis.details && data.kpis.details.length > 0 ? (
+                                    data.kpis.details.map((kpi: any, idx: number) => (
+                                        <div key={idx} className="space-y-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="font-medium">{kpi.name}</span>
+                                                <span className="text-muted-foreground">
+                                                    {kpi.current_value.toLocaleString()} / {kpi.target_value.toLocaleString()} {kpi.unit}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full ${kpi.progress >= 100 ? 'bg-green-500' : 'bg-primary'}`}
+                                                        style={{ width: `${Math.min(kpi.progress, 100)}%` }}
+                                                    />
+                                                </div>
+                                                <span className="text-xs font-bold w-9 text-right">{kpi.progress}%</span>
+                                            </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-muted-foreground">
+                                        Chưa có KPI nào được thiết lập
                                     </div>
-                                </div>
+                                )}
                             </CardContent>
                         </Card>
 
                         {/* Task Stats */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Tiến độ công việc</CardTitle>
+                        <Card className="h-full">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base">Trạng thái công việc</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="flex items-center justify-center p-4">
-                                    <div className="relative w-32 h-32 flex items-center justify-center">
-                                        <svg className="w-full h-full transform -rotate-90">
-                                            <circle cx="64" cy="64" r="60" stroke="#f3f4f6" strokeWidth="8" fill="transparent" />
-                                            <circle
-                                                cx="64" cy="64" r="60"
-                                                stroke="#22c55e" strokeWidth="8" fill="transparent"
-                                                strokeDasharray={377}
-                                                strokeDashoffset={377 - (377 * data.tasks.rate) / 100}
-                                                className="transition-all duration-1000 ease-out"
-                                            />
-                                        </svg>
-                                        <div className="absolute flex flex-col items-center">
-                                            <span className="text-3xl font-bold">{data.tasks.rate}%</span>
-                                            <span className="text-xs text-muted-foreground">Hoàn thành</span>
-                                        </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-gray-50 rounded-xl border flex flex-col items-center justify-center">
+                                        <span className="text-3xl font-bold text-gray-700">{data.tasks.todo}</span>
+                                        <span className="text-sm text-muted-foreground font-medium">Cần làm</span>
+                                    </div>
+                                    <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex flex-col items-center justify-center">
+                                        <span className="text-3xl font-bold text-blue-600">{data.tasks.doing}</span>
+                                        <span className="text-sm text-blue-600/80 font-medium">Đang làm</span>
+                                    </div>
+                                    <div className="p-4 bg-orange-50 rounded-xl border border-orange-100 flex flex-col items-center justify-center">
+                                        <span className="text-3xl font-bold text-orange-600">{data.tasks.review}</span>
+                                        <span className="text-sm text-orange-600/80 font-medium">Review</span>
+                                    </div>
+                                    <div className="p-4 bg-green-50 rounded-xl border border-green-100 flex flex-col items-center justify-center">
+                                        <span className="text-3xl font-bold text-green-600">{data.tasks.done}</span>
+                                        <span className="text-sm text-green-600/80 font-medium">Hoàn thành</span>
                                     </div>
                                 </div>
-                                <div className="flex justify-center gap-8 mt-2">
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold">{data.tasks.completed}</div>
-                                        <div className="text-xs text-muted-foreground">Đã xong</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-2xl font-bold">{data.tasks.total}</div>
-                                        <div className="text-xs text-muted-foreground">Tổng task</div>
-                                    </div>
+                                <div className="mt-6 pt-4 border-t flex justify-between items-center text-sm text-muted-foreground">
+                                    <span>Tổng số metrics:</span>
+                                    <span className="font-semibold text-foreground">{data.tasks.total} task</span>
                                 </div>
                             </CardContent>
                         </Card>
