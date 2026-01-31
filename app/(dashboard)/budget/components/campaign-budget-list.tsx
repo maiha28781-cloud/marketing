@@ -6,10 +6,21 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CampaignBudgetStats } from '@/lib/modules/budget/queries'
-import { Trash2, RotateCcw, Edit2, AlertCircle } from 'lucide-react'
+import { deleteCampaign, restoreCampaign } from '@/lib/modules/budget/actions'
+import { Trash2, RotateCcw, Edit2, AlertCircle, XCircle } from 'lucide-react'
 import { EditBudgetDialog } from './edit-budget-dialog'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface CampaignBudgetListProps {
     campaigns: CampaignBudgetStats[]
@@ -19,6 +30,40 @@ interface CampaignBudgetListProps {
 export function CampaignBudgetList({ campaigns, isAdmin }: CampaignBudgetListProps) {
     const [editingCampaign, setEditingCampaign] = useState<CampaignBudgetStats | null>(null)
     const [viewTrash, setViewTrash] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null)
+
+    const handleDelete = async (id: string) => {
+        // Open confirmation dialog
+        setDeleteConfirmationId(id)
+    }
+
+    const confirmDelete = async () => {
+        if (!deleteConfirmationId) return
+
+        try {
+            setIsLoading(true)
+            await deleteCampaign(deleteConfirmationId)
+        } catch (error) {
+            console.error('Failed to delete:', error)
+            alert('Failed to delete campaign')
+        } finally {
+            setIsLoading(false)
+            setDeleteConfirmationId(null)
+        }
+    }
+
+    const handleRestore = async (id: string) => {
+        try {
+            setIsLoading(true)
+            await restoreCampaign(id)
+        } catch (error) {
+            console.error('Failed to restore:', error)
+            alert('Failed to restore campaign')
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -80,17 +125,21 @@ export function CampaignBudgetList({ campaigns, isAdmin }: CampaignBudgetListPro
                                                 variant="outline"
                                                 size="sm"
                                                 className="gap-1 text-green-600 hover:text-green-700"
-                                                onClick={async () => {
-                                                    // Quick restore to draft
-                                                    // Ideally this should use a server action prop or import. 
-                                                    // For now, let's open the edit dialog or we need to import `updateCampaignBudget` here?
-                                                    // EditBudgetDialog handles updates. Let's just use EditBudgetDialog for Restore too, or add a quick restore button if we import the action.
-                                                    // Since CampaignBudgetList is a client component, we can import the server action.
-                                                    setEditingCampaign(campaign)
-                                                }}
+                                                disabled={isLoading}
+                                                onClick={() => handleRestore(campaign.id)}
                                             >
                                                 <RotateCcw className="h-4 w-4" />
                                                 Restore
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="gap-1 text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                                                disabled={isLoading}
+                                                onClick={() => handleDelete(campaign.id)}
+                                            >
+                                                <XCircle className="h-4 w-4" />
+                                                Delete Forever
                                             </Button>
                                         </div>
                                     ) : (
@@ -184,6 +233,24 @@ export function CampaignBudgetList({ campaigns, isAdmin }: CampaignBudgetListPro
                     />
                 )
             }
+
+            <AlertDialog open={!!deleteConfirmationId} onOpenChange={() => setDeleteConfirmationId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the campaign
+                            and remove all associated data from the server.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                            Delete Forever
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div >
     )
 }

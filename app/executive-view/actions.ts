@@ -54,11 +54,11 @@ export async function getExecutiveData() {
     const supabase = await createAdminClient()
 
     // 1. Fetch Campaigns & Budget
-    // Note: fetching all campaigns for now to debug
+    // Note: fetching all campaigns to match Budget View
     const { data: campaigns, error: campaignsError } = await supabase
         .from('campaigns')
         .select('id, name, budget_total, status')
-        .in('status', ['active', 'paused', 'completed'])
+        .neq('status', 'trash')
 
     // Debug log
     if (campaignsError) {
@@ -71,6 +71,7 @@ export async function getExecutiveData() {
         .from('content_items')
         .select('actual_cost, campaign_id')
         .gt('actual_cost', 0)
+        .eq('type', 'ad_creative') // Only include Ad Creative items in budget logic
 
     let totalBudget = 0
     let totalSpent = 0
@@ -170,11 +171,16 @@ export async function getExecutiveData() {
         }
     }) || []
 
+    const totalOverBudget = campaignDetails.reduce((sum, c) => {
+        return c.remaining < 0 ? sum + Math.abs(c.remaining) : sum
+    }, 0)
+
     return {
         budget: {
             total: totalBudget,
             spent: totalSpent,
             remaining: remaining,
+            overBudget: totalOverBudget,
             campaigns: campaignDetails,
         },
         kpis: {

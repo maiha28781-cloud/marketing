@@ -41,7 +41,17 @@ export default async function ExecutiveDashboardPage() {
                         <DollarSign className="w-5 h-5 text-primary" />
                         Tài chính & Ngân sách
                     </h2>
-                    <div className="grid gap-4 md:grid-cols-3 mb-6">
+                    <div className="grid gap-4 md:grid-cols-4 mb-6">
+                        <Card className="border-red-200 bg-red-50/50">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-red-600">Over Budget</CardTitle>
+                                <AlertCircle className="h-4 w-4 text-red-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-red-600">{data.budget.overBudget.toLocaleString()} đ</div>
+                                <p className="text-xs text-red-600/80">Vượt định mức</p>
+                            </CardContent>
+                        </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Tổng ngân sách</CardTitle>

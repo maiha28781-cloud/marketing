@@ -20,6 +20,7 @@ export interface BudgetOverview {
     total_budget: number
     total_spend: number
     total_remaining: number
+    total_over_budget: number
     spend_percent: number
     campaigns: CampaignBudgetStats[]
     recent_expenses: ContentItem[]
@@ -38,6 +39,7 @@ export async function getBudgetOverview(): Promise<BudgetOverview> {
         total_budget: 0,
         total_spend: 0,
         total_remaining: 0,
+        total_over_budget: 0,
         spend_percent: 0,
         campaigns: [],
         recent_expenses: []
@@ -77,14 +79,21 @@ export async function getBudgetOverview(): Promise<BudgetOverview> {
         }
     })
 
-    // Calculate total stats
-    const total_budget = campaignStats.reduce((sum, c) => sum + c.budget_total, 0)
-    const total_spend = campaignStats.reduce((sum, c) => sum + c.spend_total, 0)
+    // Calculate total stats (excluding trash)
+    const total_budget = campaignStats.reduce((sum, c) => c.status === 'trash' ? sum : sum + c.budget_total, 0)
+    const total_spend = campaignStats.reduce((sum, c) => c.status === 'trash' ? sum : sum + c.spend_total, 0)
+
+    // Calculate total over budget (sum of negative remaining amounts)
+    const total_over_budget = campaignStats.reduce((sum, c) => {
+        if (c.status === 'trash') return sum
+        return c.remaining < 0 ? sum + Math.abs(c.remaining) : sum
+    }, 0)
 
     return {
         total_budget,
         total_spend,
         total_remaining: total_budget - total_spend,
+        total_over_budget,
         spend_percent: total_budget > 0 ? (total_spend / total_budget) * 100 : 0,
         campaigns: campaignStats,
         recent_expenses: items.slice(0, 10) // Top 10 recent

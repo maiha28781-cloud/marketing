@@ -25,6 +25,19 @@ export function BudgetOverviewStats({ data }: BudgetOverviewProps) {
         <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid gap-4 md:grid-cols-4">
+                <Card className="border-red-200 bg-red-50/50">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-red-600">Over Budget</CardTitle>
+                        <AlertOctagon className="h-4 w-4 text-red-600" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-red-600">{formatCurrency(data.total_over_budget)}</div>
+                        <p className="text-xs text-red-600/80">
+                            Total excess spending
+                        </p>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
