@@ -31,6 +31,7 @@ interface CalendarViewProps {
     campaigns: { id: string; name: string }[]
     members: { id: string; full_name: string }[]
     userRole?: string
+    showTabs?: boolean
 }
 
 const PLATFORM_COLORS: Record<string, string> = {
@@ -52,7 +53,7 @@ import { useToast } from '@/hooks/use-toast'
 
 const DnDCalendar = withDragAndDrop(Calendar)
 
-export function CalendarView({ items, campaigns, members, userRole }: CalendarViewProps) {
+export function CalendarView({ items, campaigns, members, userRole, showTabs = true }: CalendarViewProps) {
     const { toast } = useToast()
     const [view, setView] = useState<View>(Views.MONTH)
     const [date, setDate] = useState(new Date())
@@ -64,6 +65,8 @@ export function CalendarView({ items, campaigns, members, userRole }: CalendarVi
     const searchParams = useSearchParams()
     const router = useRouter()
 
+    // ... (keep existing effects)
+
     // Handle Deep Linking (Open dialog from URL contentId)
     useEffect(() => {
         const contentId = searchParams.get('contentId')
@@ -72,10 +75,6 @@ export function CalendarView({ items, campaigns, members, userRole }: CalendarVi
             if (item) {
                 setSelectedItem(item)
                 setDialogOpen(true)
-                // Optional: Clear the param after opening to avoid re-opening on refresh/navigate
-                // const newParams = new URLSearchParams(searchParams.toString())
-                // newParams.delete('contentId')
-                // router.replace(`/calendar?${newParams.toString()}`)
             }
         }
     }, [searchParams, localItems])
@@ -159,13 +158,67 @@ export function CalendarView({ items, campaigns, members, userRole }: CalendarVi
         }
     }
 
-
-
-    // ... existing code ...
-
     // Filter items based on active tab logic
     const editorialItems = events.filter(e => e.resource.type !== 'ad_creative')
     const mediaItems = events.filter(e => e.resource.type === 'ad_creative')
+
+    const CalendarComponent = ({ eventsList }: { eventsList: any[] }) => (
+        <div className="bg-card rounded-md border p-4 shadow-sm h-[600px]">
+            <DnDCalendar
+                localizer={localizer}
+                events={eventsList}
+                startAccessor={(event: any) => event.start}
+                endAccessor={(event: any) => event.end}
+                style={{ height: '100%' }}
+                view={view}
+                onView={setView}
+                date={date}
+                onNavigate={setDate}
+                selectable
+                resizable
+                onSelectSlot={handleSelectSlot}
+                onSelectEvent={handleSelectEvent}
+                onEventDrop={handleEventDrop}
+                eventPropGetter={eventStyleGetter}
+                culture="vi"
+                messages={{
+                    next: "Sau",
+                    previous: "Trước",
+                    today: "Hôm nay",
+                    month: "Tháng",
+                    week: "Tuần",
+                    day: "Ngày"
+                }}
+            />
+        </div>
+    )
+
+    if (!showTabs) {
+        return (
+            <div className="h-full flex flex-col space-y-4">
+                <div className="flex justify-end items-center">
+                    <Button onClick={() => { setSelectedDate(new Date()); setSelectedItem(undefined); setDialogOpen(true); }}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Content
+                    </Button>
+                </div>
+                <CalendarComponent eventsList={events} />
+                <ContentDialog
+                    open={dialogOpen}
+                    onOpenChange={setDialogOpen}
+                    initialDate={selectedDate}
+                    existingItem={selectedItem}
+                    campaigns={campaigns}
+                    members={members}
+                    userRole={userRole}
+                    onDeleteSuccess={(id) => {
+                        setLocalItems(prev => prev.filter(i => i.id !== id))
+                        setDialogOpen(false)
+                    }}
+                />
+            </div>
+        )
+    }
 
     return (
         <Tabs defaultValue="all" className="h-full flex flex-col space-y-4">
@@ -183,96 +236,15 @@ export function CalendarView({ items, campaigns, members, userRole }: CalendarVi
             </div>
 
             <TabsContent value="all" className="flex-1 h-full mt-0">
-                <div className="bg-card rounded-md border p-4 shadow-sm h-[600px]">
-                    <DnDCalendar
-                        localizer={localizer}
-                        events={events}
-                        startAccessor={(event: any) => event.start}
-                        endAccessor={(event: any) => event.end}
-                        style={{ height: '100%' }}
-                        view={view}
-                        onView={setView}
-                        date={date}
-                        onNavigate={setDate}
-                        selectable
-                        resizable
-                        onSelectSlot={handleSelectSlot}
-                        onSelectEvent={handleSelectEvent}
-                        onEventDrop={handleEventDrop}
-                        eventPropGetter={eventStyleGetter}
-                        culture="vi"
-                        messages={{
-                            next: "Sau",
-                            previous: "Trước",
-                            today: "Hôm nay",
-                            month: "Tháng",
-                            week: "Tuần",
-                            day: "Ngày"
-                        }}
-                    />
-                </div>
+                <CalendarComponent eventsList={events} />
             </TabsContent>
 
             <TabsContent value="editorial" className="flex-1 h-full mt-0">
-                <div className="bg-card rounded-md border p-4 shadow-sm h-[600px]">
-                    <DnDCalendar
-                        localizer={localizer}
-                        events={editorialItems}
-                        startAccessor={(event: any) => event.start}
-                        endAccessor={(event: any) => event.end}
-                        style={{ height: '100%' }}
-                        view={view}
-                        onView={setView}
-                        date={date}
-                        onNavigate={setDate}
-                        selectable
-                        resizable
-                        onSelectSlot={handleSelectSlot}
-                        onSelectEvent={handleSelectEvent}
-                        onEventDrop={handleEventDrop}
-                        eventPropGetter={eventStyleGetter}
-                        culture="vi"
-                        messages={{
-                            next: "Sau",
-                            previous: "Trước",
-                            today: "Hôm nay",
-                            month: "Tháng",
-                            week: "Tuần",
-                            day: "Ngày"
-                        }}
-                    />
-                </div>
+                <CalendarComponent eventsList={editorialItems} />
             </TabsContent>
 
             <TabsContent value="media" className="flex-1 h-full mt-0">
-                <div className="bg-card rounded-md border p-4 shadow-sm h-[600px]">
-                    <DnDCalendar
-                        localizer={localizer}
-                        events={mediaItems}
-                        startAccessor={(event: any) => event.start}
-                        endAccessor={(event: any) => event.end}
-                        style={{ height: '100%' }}
-                        view={view}
-                        onView={setView}
-                        date={date}
-                        onNavigate={setDate}
-                        selectable
-                        resizable
-                        onSelectSlot={handleSelectSlot}
-                        onSelectEvent={handleSelectEvent}
-                        onEventDrop={handleEventDrop}
-                        eventPropGetter={eventStyleGetter}
-                        culture="vi"
-                        messages={{
-                            next: "Sau",
-                            previous: "Trước",
-                            today: "Hôm nay",
-                            month: "Tháng",
-                            week: "Tuần",
-                            day: "Ngày"
-                        }}
-                    />
-                </div>
+                <CalendarComponent eventsList={mediaItems} />
             </TabsContent>
 
             <ContentDialog

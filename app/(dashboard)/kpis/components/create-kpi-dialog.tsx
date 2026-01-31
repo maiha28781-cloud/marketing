@@ -21,8 +21,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { createKPI } from '@/lib/modules/kpis/actions'
-import type { KPIType, KPIPeriod } from '@/lib/modules/kpis/types'
+import type { KPIType, KPIPeriod, TrackingSource, ContentType } from '@/lib/modules/kpis/types'
 
 interface CreateKPIDialogProps {
     teamMembers: any[]
@@ -38,6 +39,13 @@ const kpiTypeOptions: { value: KPIType; label: string; unit: string }[] = [
     { value: 'other', label: 'Khác (tùy chỉnh)', unit: '' },
 ]
 
+const contentTypeOptions: { value: ContentType; label: string; unit: string }[] = [
+    { value: 'blog_post', label: 'Bài viết', unit: 'bài viết' },
+    { value: 'video', label: 'Video', unit: 'video' },
+    { value: 'social_post', label: 'Hình ảnh/Social Post', unit: 'bài đăng' },
+    { value: 'all', label: 'Tất cả loại content', unit: 'items' },
+]
+
 const periodOptions: { value: KPIPeriod; label: string }[] = [
     { value: 'weekly', label: 'Hàng tuần' },
     { value: 'monthly', label: 'Hàng tháng' },
@@ -49,6 +57,9 @@ export function CreateKPIDialog({ teamMembers, currentUserId }: CreateKPIDialogP
     const [open, setOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [selectedType, setSelectedType] = useState<KPIType>('content_articles')
+    const [autoTrack, setAutoTrack] = useState(false)
+    const [trackingSource, setTrackingSource] = useState<TrackingSource>('tasks')
+    const [contentType, setContentType] = useState<ContentType>('blog_post')
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -59,6 +70,19 @@ export function CreateKPIDialog({ teamMembers, currentUserId }: CreateKPIDialogP
         const kpiType = formData.get('kpi_type') as KPIType
         const selectedKPIOption = kpiTypeOptions.find(opt => opt.value === kpiType)
 
+        // Determine unit based on tracking source
+        let unit = formData.get('unit') as string || ''
+        if (autoTrack) {
+            if (trackingSource === 'content') {
+                const selectedContentType = contentTypeOptions.find(opt => opt.value === contentType)
+                unit = selectedContentType?.unit || 'items'
+            } else {
+                unit = 'tasks'
+            }
+        } else {
+            unit = unit || selectedKPIOption?.unit || ''
+        }
+
         const input = {
             user_id: formData.get('user_id') as string,
             name: formData.get('name') as string,
@@ -66,11 +90,21 @@ export function CreateKPIDialog({ teamMembers, currentUserId }: CreateKPIDialogP
             kpi_type: kpiType,
             target_value: Number(formData.get('target_value')),
             current_value: Number(formData.get('current_value')) || 0,
-            unit: formData.get('unit') as string || selectedKPIOption?.unit || '',
+            unit: unit,
+            auto_track: autoTrack,
+            tracking_source: trackingSource,
+            tracking_filter: trackingSource === 'content' ? { content_type: contentType } : {},
             period: formData.get('period') as KPIPeriod,
             start_date: formData.get('start_date') as string,
             end_date: formData.get('end_date') as string,
         }
+
+        // Debug log
+        console.log('🔍 CreateKPI Input:', {
+            auto_track: input.auto_track,
+            tracking_source: input.tracking_source,
+            tracking_filter: input.tracking_filter
+        })
 
         const result = await createKPI(input)
 
@@ -163,6 +197,65 @@ export function CreateKPIDialog({ teamMembers, currentUserId }: CreateKPIDialogP
                         />
                     </div>
 
+                    {/* Auto Track Configuration */}
+                    <div className="space-y-4 border rounded-lg p-4 bg-gray-50">
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                id="auto_track"
+                                checked={autoTrack}
+                                onChange={(e) => setAutoTrack(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <Label htmlFor="auto_track" className="cursor-pointer font-medium">
+                                ✨ Tự động theo dõi (Auto Track)
+                            </Label>
+                        </div>
+
+                        {autoTrack && (
+                            <div className="space-y-4 mt-4 pl-6">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Nguồn dữ liệu</Label>
+                                    <RadioGroup value={trackingSource} onValueChange={(val) => setTrackingSource(val as TrackingSource)}>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="tasks" id="create-source-tasks" />
+                                            <Label htmlFor="create-source-tasks" className="cursor-pointer font-normal">
+                                                📋 Tasks (Nhiệm vụ)
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="content" id="create-source-content" />
+                                            <Label htmlFor="create-source-content" className="cursor-pointer font-normal">
+                                                📝 Content (Nội dung)
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+
+                                {trackingSource === 'content' && (
+                                    <div className="space-y-2">
+                                        <Label className="text-sm font-medium">Loại content</Label>
+                                        <Select value={contentType} onValueChange={(val) => setContentType(val as ContentType)}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {contentTypeOptions.map((option) => (
+                                                    <SelectItem key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                <p className="text-xs text-gray-500">
+                                    ℹ️ KPI sẽ tự động cập nhật dựa trên {trackingSource === 'tasks' ? 'tasks hoàn thành' : `content ${contentType !== 'all' ? contentTypeOptions.find(o => o.value === contentType)?.label.toLowerCase() : ''} đã publish`}
+                                </p>
+                            </div>
+                        )}
+                    </div>
                     <div className="grid grid-cols-3 gap-4">
                         {/* Target Value */}
                         <div className="space-y-2">
@@ -259,7 +352,8 @@ export function CreateKPIDialog({ teamMembers, currentUserId }: CreateKPIDialogP
                         </Button>
                     </div>
                 </form>
-            </DialogContent>
-        </Dialog>
+            </DialogContent >
+        </Dialog >
     )
 }
+

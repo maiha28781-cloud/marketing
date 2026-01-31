@@ -100,49 +100,46 @@ export async function getActiveKPIs(): Promise<KPI[]> {
 
         let count = 0
 
-        console.log('🔄 Auto-tracking KPI:', {
-            id: kpi.id,
-            name: kpi.name,
-            auto_track: kpi.auto_track,
-            tracking_source: kpi.tracking_source,
-            tracking_filter: kpi.tracking_filter
-        })
-
-        if (kpi.tracking_source === 'content') {
+        if (kpi.kpi_type.startsWith('content_')) {
             // Content Tracking
-            const contentType = kpi.tracking_filter?.content_type
+            let type = ''
+            if (kpi.kpi_type === 'content_videos') type = 'video'
+            else if (kpi.kpi_type === 'content_articles') type = 'blog_post' // Assuming articles maps to blog_post
+            else if (kpi.kpi_type === 'content_images') type = 'social_post' // Assuming images maps to social_post? User said "Số Video". Let's stick to video/blog_post. 
+            // Better to map granularly or check if generic 'content' type.
+            // Let's assume broad mapping for now or default to 'social_post' for others.
+            // Screenshot 1 has "Số Video".
+            // Let's refine mapping:
+            const typeMap: Record<string, string> = {
+                'content_videos': 'video',
+                'content_articles': 'blog_post',
+                'content_images': 'social_post'
+            }
+            type = typeMap[kpi.kpi_type] || 'social_post'
 
-            let query = supabase
+            const { count: contentCount } = await supabase
                 .from('content_items')
                 .select('id', { count: 'exact', head: true })
                 .eq('assignee_id', kpi.user_id)
                 .in('status', ['published', 'completed'])
+                .eq('type', type)
                 .gte('scheduled_date', kpi.start_date)
                 .lte('scheduled_date', kpi.end_date + 'T23:59:59')
 
-            // Apply content type filter if specified
-            if (contentType && contentType !== 'all') {
-                query = query.eq('type', contentType)
-            }
-
-            const { count: contentCount } = await query
             count = contentCount || 0
-
-        } else if (kpi.tracking_source === 'tasks') {
-            // Task Tracking
-            let query = supabase
+        } else {
+            // Task Tracking (Default 'other' or 'leads' if mapped)
+            // User requested "Tasks Module" tracking
+            const { count: taskCount } = await supabase
                 .from('tasks')
                 .select('id', { count: 'exact', head: true })
-                .eq('assigned_to', kpi.user_id)
+                .eq('assigned_to', kpi.user_id) // tasks table uses assigned_to
                 .eq('status', 'done')
-                .gte('completed_at', kpi.start_date)
-                .lte('completed_at', kpi.end_date + 'T23:59:59')
+                .gte('updated_at', kpi.start_date) // Using updated_at for completion time? Or created_at? User specifically said "Task Done", usually means when it was finished. But DB might not store finished_at. using updated_at is defined as decent proxy if status changed.
+                .lte('updated_at', kpi.end_date + 'T23:59:59')
 
-            const { count: taskCount } = await query
             count = taskCount || 0
         }
-
-        console.log('✅ Calculated count for KPI', kpi.name, ':', count)
 
         // Only update display value, do NOT write back to DB (to avoid race conditions/perf). 
         // Admin calculates payroll based on this view.

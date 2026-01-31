@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getKPIs, getKPIStats, getKPISummaryByUser } from '@/lib/modules/kpis/queries'
+import { getActiveKPIs, getKPIStats, getKPISummaryByUser } from '@/lib/modules/kpis/queries'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,7 +29,7 @@ export default async function KPIsPage() {
         .select('id, full_name, email, position')
         .order('full_name')
 
-    const kpis = await getKPIs()
+    const kpis = await getActiveKPIs()  // Use getActiveKPIs for auto-track support!
     const stats = await getKPIStats()
     const summaries = await getKPISummaryByUser()
 

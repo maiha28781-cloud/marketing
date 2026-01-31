@@ -102,7 +102,7 @@ export async function updateKPIProgress(input: UpdateKPIProgressInput) {
     // Get KPI to check ownership
     const { data: kpi } = await supabase
         .from('kpis')
-        .select('user_id')
+        .select('user_id, auto_track')
         .eq('id', input.id)
         .single()
 
@@ -117,11 +117,17 @@ export async function updateKPIProgress(input: UpdateKPIProgressInput) {
         .eq('id', user.id)
         .single()
 
-    const isAuthorized = profile?.role === 'admin' || kpi.user_id === user.id
+    const isAdmin = profile?.role === 'admin'
+    const isOwner = kpi.user_id === user.id
+
+    const isAuthorized = isAdmin || isOwner
 
     if (!isAuthorized) {
         return { error: 'Not authorized to update this KPI' }
     }
+
+    // Note: Admin can override auto-tracked KPIs manually
+    // The auto-track system will recalculate on next getActiveKPIs() call
 
     // Update KPI
     const { data, error } = await supabase

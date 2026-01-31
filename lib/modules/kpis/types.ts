@@ -8,6 +8,17 @@ export type KPIType =
 
 export type KPIPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly'
 
+// New tracking system types
+export type TrackingSource = 'tasks' | 'content'
+
+export type ContentType = 'blog_post' | 'video' | 'social_post' | 'all'
+
+export interface TrackingFilter {
+    content_type?: ContentType
+    priority?: 'low' | 'medium' | 'high'
+    // Future extensibility: labels, tags, etc.
+}
+
 export interface KPI {
     id: string
     user_id: string
@@ -15,12 +26,17 @@ export interface KPI {
     // Metadata
     name: string
     description?: string
-    kpi_type: KPIType
+    kpi_type: KPIType // Kept for backward compatibility
 
     // Values
     target_value: number
     current_value: number
     unit?: string
+    auto_track?: boolean
+
+    // New tracking system
+    tracking_source: TrackingSource
+    tracking_filter: TrackingFilter
 
     // Period
     period: KPIPeriod
@@ -45,33 +61,35 @@ export interface KPI {
     }
 }
 
-export interface KPIHistory {
-    id: string
-    kpi_id: string
-    value: number
-    recorded_at: string
-    updated_by: string
-}
+// ... (rest of interface)
 
+// In CreateKPIInput
 export interface CreateKPIInput {
     user_id: string
     name: string
     description?: string
-    kpi_type: KPIType
+    kpi_type: KPIType // Kept for backward compatibility
     target_value: number
     current_value?: number
     unit?: string
+    auto_track?: boolean
+    tracking_source: TrackingSource
+    tracking_filter?: TrackingFilter
     period: KPIPeriod
     start_date: string
     end_date: string
 }
 
+// In UpdateKPIInput
 export interface UpdateKPIInput {
     id: string
     name?: string
     description?: string
     target_value?: number
     current_value?: number
+    auto_track?: boolean
+    tracking_source?: TrackingSource
+    tracking_filter?: TrackingFilter
     end_date?: string
 }
 

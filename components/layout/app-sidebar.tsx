@@ -10,6 +10,8 @@ import {
     LogOut,
     User,
     Target,
+    Share2,
+    BadgeDollarSign,
 } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -75,6 +77,11 @@ const menuItems = [
         href: '/calendar',
     },
     {
+        title: 'Social',
+        icon: Share2,
+        href: '/social',
+    },
+    {
         title: 'Budget',
         icon: DollarSign,
         href: '/budget',
@@ -83,6 +90,11 @@ const menuItems = [
         title: 'Reports',
         icon: BarChart3,
         href: '/reports',
+    },
+    {
+        title: 'Payroll',
+        icon: BadgeDollarSign,
+        href: '/payroll',
     },
 ]
 

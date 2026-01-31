@@ -76,6 +76,17 @@ export function UpdateKPIProgressDialog({ kpi, open, onOpenChange }: UpdateKPIPr
                     {/* New Value Input */}
                     <div className="space-y-2">
                         <Label htmlFor="current_value">Giá trị mới *</Label>
+
+                        {kpi.auto_track && (
+                            <div className="p-3 bg-amber-50 text-amber-700 rounded-md text-sm border border-amber-200 mb-2">
+                                ⚠️ KPI này đang được cập nhật tự động.
+                                <br />
+                                <span className="text-xs opacity-80">
+                                    Giá trị thủ công sẽ ghi đè auto-track. Hệ thống sẽ cập nhật lại khi refresh.
+                                </span>
+                            </div>
+                        )}
+
                         <Input
                             id="current_value"
                             name="current_value"
@@ -87,6 +98,7 @@ export function UpdateKPIProgressDialog({ kpi, open, onOpenChange }: UpdateKPIPr
                             required
                             autoFocus
                         />
+
                         <p className="text-xs text-muted-foreground">
                             Đơn vị: {kpi.unit}
                         </p>

@@ -139,6 +139,8 @@ export async function updateTask(data: UpdateTaskInput) {
 
     revalidatePath('/tasks')
     revalidatePath('/dashboard')
+    revalidatePath('/kpis')
+    revalidatePath('/payroll')
     return { success: true }
 }
 
