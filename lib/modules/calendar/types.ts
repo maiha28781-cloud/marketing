@@ -1,7 +1,7 @@
 export type CampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'trash'
 export type ContentType = 'social_post' | 'blog_post' | 'video' | 'ad_creative' | 'email' | 'other'
 export type ContentPlatform = 'facebook' | 'tiktok' | 'youtube' | 'instagram' | 'website' | 'email' | 'linkedin' | 'other'
-export type ContentStatus = 'idea' | 'draft' | 'review' | 'scheduled' | 'published' | 'cancelled'
+export type ContentStatus = 'idea' | 'draft' | 'review' | 'scheduled' | 'published' | 'cancelled' | 'approved' | 'running' | 'paused' | 'completed'
 
 export interface Campaign {
     id: string

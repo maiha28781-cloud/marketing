@@ -27,6 +27,14 @@ export interface TaskReport {
         high: number
         urgent: number
     }
+    recent_tasks: {
+        id: string
+        title: string
+        status: string
+        due_date: string | null
+        assignee_name: string
+        assignee_position: string
+    }[]
 }
 
 export interface KPIReport {
@@ -108,17 +116,38 @@ export async function getCurrentMonthPeriod(): Promise<ReportPeriod> {
     }
 }
 
-/**
- * Get task report for a period
- */
+// ... (in getTaskReport function) ...
+
 export async function getTaskReport(start: Date, end: Date): Promise<TaskReport> {
     const supabase = await createClient()
 
+    // 1. Fetch counts (existing logic)
     const { data: tasks } = await supabase
         .from('tasks')
         .select('*')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString())
+
+    // 2. Fetch detailed recent tasks for the table (limit 10 for report)
+    const { data: recentTasksData } = await supabase
+        .from('tasks')
+        .select(`
+            id, title, status, due_date,
+            profiles!assigned_to (full_name, position)
+        `)
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(3)
+
+    const recent_tasks = recentTasksData?.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        due_date: t.due_date,
+        assignee_name: t.profiles?.full_name || 'Unassigned',
+        assignee_position: t.profiles?.position || ''
+    })) || []
 
     if (!tasks) {
         return {
@@ -127,7 +156,8 @@ export async function getTaskReport(start: Date, end: Date): Promise<TaskReport>
             in_progress: 0,
             completion_rate: 0,
             by_status: { todo: 0, doing: 0, review: 0, done: 0 },
-            by_priority: { low: 0, medium: 0, high: 0, urgent: 0 }
+            by_priority: { low: 0, medium: 0, high: 0, urgent: 0 },
+            recent_tasks: []
         }
     }
 
@@ -155,6 +185,7 @@ export async function getTaskReport(start: Date, end: Date): Promise<TaskReport>
         completion_rate: tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0,
         by_status,
         by_priority,
+        recent_tasks
     }
 }
 
@@ -240,6 +271,40 @@ export async function getKPIReport(start: Date, end: Date): Promise<KPIReport> {
         avg_completion: kpis.length > 0 ? Math.round(total_percentage / kpis.length) : 0,
         by_user
     }
+}
+
+export interface BudgetReport {
+    total_campaigns: number
+    active_campaigns: number
+    total_budget: number
+    estimated_cost: number
+    actual_cost: number
+    campaigns: {
+        id: string
+        name: string
+        status: string
+        budget: number
+        spent: number
+    }[]
+}
+
+export interface WeeklyReport {
+    period: ReportPeriod
+    tasks: TaskReport
+    kpis: KPIReport
+    budget: BudgetReport
+}
+
+export interface MonthlyReport {
+    period: ReportPeriod
+    tasks: TaskReport
+    kpis: KPIReport
+    budget: BudgetReport
+    weekly_breakdown: {
+        week: string
+        tasks_completed: number
+        kpis_avg: number
+    }[]
 }
 
 /**

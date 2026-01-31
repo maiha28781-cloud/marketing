@@ -163,6 +163,29 @@ export function ContentDialog({ open, onOpenChange, initialDate, existingItem, c
         }
     }
 
+    const getStatusOptions = (type?: ContentType) => {
+        if (type === 'ad_creative') {
+            return [
+                { value: 'draft', label: 'Draft' },
+                { value: 'review', label: 'In Review' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'running', label: 'Running' },
+                { value: 'paused', label: 'Paused' },
+                { value: 'completed', label: 'Completed' },
+            ]
+        }
+        return [
+            { value: 'idea', label: 'Idea' },
+            { value: 'draft', label: 'Draft' },
+            { value: 'review', label: 'In Review' },
+            { value: 'scheduled', label: 'Scheduled' },
+            { value: 'published', label: 'Published' },
+            { value: 'cancelled', label: 'Cancelled' },
+        ]
+    }
+
+    const currentStatuses = getStatusOptions(formData.type)
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
@@ -187,7 +210,18 @@ export function ContentDialog({ open, onOpenChange, initialDate, existingItem, c
                                 <Label>Type</Label>
                                 <Select
                                     value={formData.type}
-                                    onValueChange={v => setFormData({ ...formData, type: v as ContentType })}
+                                    onValueChange={v => {
+                                        const newType = v as ContentType
+                                        // Reset status if not valid for new type
+                                        const newStatuses = getStatusOptions(newType)
+                                        const isStatusValid = newStatuses.some(s => s.value === formData.status)
+
+                                        setFormData({
+                                            ...formData,
+                                            type: newType,
+                                            status: isStatusValid ? formData.status : newStatuses[0].value as ContentStatus
+                                        })
+                                    }}
                                 >
                                     <SelectTrigger>
                                         <SelectValue />
@@ -229,7 +263,7 @@ export function ContentDialog({ open, onOpenChange, initialDate, existingItem, c
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {STATUSES.map(s => (
+                                        {currentStatuses.map(s => (
                                             <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -309,9 +343,10 @@ export function ContentDialog({ open, onOpenChange, initialDate, existingItem, c
                         )}
 
                         <div className="space-y-2">
-                            <Label>Content URL</Label>
-                            <Input
-                                placeholder="https://..."
+                            <Label>Ghi chú / Mô tả</Label>
+                            <textarea
+                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="Ghi chú thêm về nội dung..."
                                 value={formData.content_url || ''}
                                 onChange={e => setFormData({ ...formData, content_url: e.target.value })}
                             />

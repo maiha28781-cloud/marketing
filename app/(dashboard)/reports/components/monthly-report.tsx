@@ -128,6 +128,66 @@ export function MonthlyReport({ report }: MonthlyReportProps) {
                 </Card>
             </div>
 
+            {/* Recent Tasks Table */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                        Công việc gần đây
+                    </CardTitle>
+                    <a href="/tasks" className="text-sm text-blue-600 hover:underline">
+                        Xem tất cả
+                    </a>
+                </CardHeader>
+                <CardContent>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50 border-b">
+                                <tr>
+                                    <th className="h-10 px-4 text-left font-medium text-muted-foreground">Công việc</th>
+                                    <th className="h-10 px-4 text-left font-medium text-muted-foreground">Giao cho</th>
+                                    <th className="h-10 px-4 text-left font-medium text-muted-foreground">Deadline</th>
+                                    <th className="h-10 px-4 text-right font-medium text-muted-foreground">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {tasks.recent_tasks && tasks.recent_tasks.length > 0 ? (
+                                    tasks.recent_tasks.map((task: any) => (
+                                        <tr key={task.id} className="border-b last:border-0 hover:bg-gray-50/50">
+                                            <td className="p-4 font-medium">{task.title}</td>
+                                            <td className="p-4">
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-gray-900">{task.assignee_name}</span>
+                                                    <span className="text-xs text-muted-foreground capitalize">{task.assignee_position}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-gray-600">
+                                                {task.due_date ? new Date(task.due_date).toLocaleDateString('vi-VN') : '-'}
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <Badge variant="outline" className={`capitalize 
+                                                    ${task.status === 'done' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                        task.status === 'doing' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                                            task.status === 'review' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                                                'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                                                    {task.status}
+                                                </Badge>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                                            Chưa có dữ liệu task trong tháng này
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* Weekly Trend */}
             <Card>
                 <CardHeader>

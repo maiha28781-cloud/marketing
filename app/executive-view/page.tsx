@@ -130,45 +130,54 @@ export default async function ExecutiveDashboardPage() {
                         </div>
                     </div>
 
-                    {/* Top Spending Items */}
+                    {/* Recent Tasks List */}
                     <div className="bg-white rounded-lg border shadow-sm overflow-hidden text-sm">
                         <div className="p-4 border-b bg-gray-50/50 flex justify-between items-center">
                             <h3 className="font-semibold flex items-center gap-2">
-                                <DollarSign className="w-4 h-4 text-orange-500" />
-                                Hạng mục chi phí cao nhất
+                                <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                                Công việc & Nhiệm vụ gần đây
                             </h3>
-                            <span className="text-xs text-muted-foreground">Top 5 Content Items</span>
+                            <span className="text-xs text-muted-foreground">5 task mới nhất</span>
                         </div>
                         <div className="p-0 overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50 border-b">
                                     <tr>
-                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Hạng mục / Content</th>
-                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Chiến dịch</th>
-                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Kênh</th>
-                                        <th className="h-10 px-4 text-right font-medium text-muted-foreground">Chi phí thực tế</th>
+                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Công việc</th>
+                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Giao cho</th>
+                                        <th className="h-10 px-4 text-left font-medium text-muted-foreground">Deadline</th>
+                                        <th className="h-10 px-4 text-right font-medium text-muted-foreground">Trạng thái</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {data.budget.topSpending && data.budget.topSpending.length > 0 ? (
-                                        data.budget.topSpending.map((item: any, idx: number) => (
-                                            <tr key={idx} className="border-b last:border-0 hover:bg-gray-50/50">
-                                                <td className="p-4 font-medium">{item.title}</td>
-                                                <td className="p-4 text-muted-foreground">{item.campaign_name}</td>
+                                    {data.tasks.recent && data.tasks.recent.length > 0 ? (
+                                        data.tasks.recent.map((task: any) => (
+                                            <tr key={task.id} className="border-b last:border-0 hover:bg-gray-50/50">
+                                                <td className="p-4 font-medium">{task.title}</td>
                                                 <td className="p-4">
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground capitalize">
-                                                        {item.platform}
-                                                    </span>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-gray-900">{task.assignee_name}</span>
+                                                        <span className="text-xs text-muted-foreground capitalize">{task.assignee_position}</span>
+                                                    </div>
                                                 </td>
-                                                <td className="p-4 text-right font-semibold text-gray-900">
-                                                    {item.actual_cost?.toLocaleString()} đ
+                                                <td className="p-4 text-gray-600">
+                                                    {task.due_date ? new Date(task.due_date).toLocaleDateString('vi-VN') : '-'}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize 
+                                                        ${task.status === 'done' ? 'bg-green-100 text-green-700' :
+                                                            task.status === 'doing' ? 'bg-blue-100 text-blue-700' :
+                                                                task.status === 'review' ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-gray-100 text-gray-700'}`}>
+                                                        {task.status}
+                                                    </span>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td colSpan={4} className="p-6 text-center text-muted-foreground">
-                                                Chưa có dữ liệu chi tiêu
+                                                Chưa có dữ liệu task
                                             </td>
                                         </tr>
                                     )}

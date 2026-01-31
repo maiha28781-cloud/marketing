@@ -51,6 +51,7 @@ export async function getBudgetOverview(): Promise<BudgetOverview> {
         .from('content_items')
         .select('*, campaign:campaigns(name)')
         .in('campaign_id', campaignIds)
+        .eq('type', 'ad_creative') // Only include Ad Creative items in budget
         .gt('actual_cost', 0) // Only items with actual cost
         .order('updated_at', { ascending: false })
 
@@ -107,6 +108,7 @@ export async function getCampaignDetails(id: string): Promise<CampaignBudgetStat
         .from('content_items')
         .select('*')
         .eq('campaign_id', id)
+        .eq('type', 'ad_creative') // Only include Ad Creative items in budget
         .gt('actual_cost', 0)
         .order('updated_at', { ascending: false })
 

@@ -132,23 +132,25 @@ export async function getExecutiveData() {
         avgKpi = Math.round(totalPercent / kpis.length)
     }
 
-    // 4. Fetch Top Spending Items (For "Check Budget")
-    // Get top 5 most expensive items
-    const { data: topSpending } = await supabase
-        .from('content_items')
-        .select('title, actual_cost, platform, campaign_id')
-        .gt('actual_cost', 0)
-        .order('actual_cost', { ascending: false })
+    // 4. Fetch Recent Tasks (Job, Deadline, Assignee)
+    const { data: recentTasks } = await supabase
+        .from('tasks')
+        .select(`
+            id, title, status, due_date,
+            profiles!assigned_to (full_name, position)
+        `)
+        .order('created_at', { ascending: false })
         .limit(5)
 
-    // Map campaign names to spending items if possible
-    const spendingWithCampaignName = topSpending?.map(item => {
-        const campaign = campaigns?.find(c => c.id === item.campaign_id)
-        return {
-            ...item,
-            campaign_name: campaign?.name || 'Unknown'
-        }
-    }) || []
+    // Map tasks to include flattened assignee info
+    const detailedTasks = recentTasks?.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        due_date: t.due_date,
+        assignee_name: t.profiles?.full_name || 'Unassigned',
+        assignee_position: t.profiles?.position || ''
+    })) || []
 
 
     // Prepare detailed campaign data
@@ -174,7 +176,6 @@ export async function getExecutiveData() {
             spent: totalSpent,
             remaining: remaining,
             campaigns: campaignDetails,
-            topSpending: spendingWithCampaignName, // New detailed spending
         },
         kpis: {
             avgAchievement: avgKpi,
@@ -183,7 +184,8 @@ export async function getExecutiveData() {
         },
         tasks: {
             ...taskStats, // Expanded stats
-            rate: taskStats.total > 0 ? Math.round((taskStats.done / taskStats.total) * 100) : 0
+            rate: taskStats.total > 0 ? Math.round((taskStats.done / taskStats.total) * 100) : 0,
+            recent: detailedTasks // New detailed task list
         }
     }
 }

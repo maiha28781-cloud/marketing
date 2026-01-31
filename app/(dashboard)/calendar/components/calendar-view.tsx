@@ -9,6 +9,7 @@ import { vi } from 'date-fns/locale'
 import { ContentItem } from '@/lib/modules/calendar/types'
 import { ContentDialog } from './content-dialog'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Plus } from 'lucide-react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './calendar.css' // Custom styles
@@ -158,43 +159,121 @@ export function CalendarView({ items, campaigns, members, userRole }: CalendarVi
         }
     }
 
+
+
+    // ... existing code ...
+
+    // Filter items based on active tab logic
+    const editorialItems = events.filter(e => e.resource.type !== 'ad_creative')
+    const mediaItems = events.filter(e => e.resource.type === 'ad_creative')
+
     return (
-        <div className="h-full flex flex-col space-y-4">
-            <div className="flex justify-end">
+        <Tabs defaultValue="all" className="h-full flex flex-col space-y-4">
+            <div className="flex justify-between items-center">
+                <TabsList>
+                    <TabsTrigger value="all">All Content</TabsTrigger>
+                    <TabsTrigger value="editorial">Editorial (Social/Blog)</TabsTrigger>
+                    <TabsTrigger value="media">Media Plan (Ads)</TabsTrigger>
+                </TabsList>
+
                 <Button onClick={() => { setSelectedDate(new Date()); setSelectedItem(undefined); setDialogOpen(true); }}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Content
                 </Button>
             </div>
 
-            <div className="flex-1 bg-card rounded-md border p-4 shadow-sm" style={{ height: 600 }}>
-                <DnDCalendar
-                    localizer={localizer}
-                    events={events}
-                    startAccessor={(event: any) => event.start}
-                    endAccessor={(event: any) => event.end}
-                    style={{ height: '100%' }}
-                    view={view}
-                    onView={setView}
-                    date={date}
-                    onNavigate={setDate}
-                    selectable
-                    resizable
-                    onSelectSlot={handleSelectSlot}
-                    onSelectEvent={handleSelectEvent}
-                    onEventDrop={handleEventDrop}
-                    eventPropGetter={eventStyleGetter}
-                    culture="vi"
-                    messages={{
-                        next: "Sau",
-                        previous: "Trước",
-                        today: "Hôm nay",
-                        month: "Tháng",
-                        week: "Tuần",
-                        day: "Ngày"
-                    }}
-                />
-            </div>
+            <TabsContent value="all" className="flex-1 h-full mt-0">
+                <div className="bg-card rounded-md border p-4 shadow-sm h-[600px]">
+                    <DnDCalendar
+                        localizer={localizer}
+                        events={events}
+                        startAccessor={(event: any) => event.start}
+                        endAccessor={(event: any) => event.end}
+                        style={{ height: '100%' }}
+                        view={view}
+                        onView={setView}
+                        date={date}
+                        onNavigate={setDate}
+                        selectable
+                        resizable
+                        onSelectSlot={handleSelectSlot}
+                        onSelectEvent={handleSelectEvent}
+                        onEventDrop={handleEventDrop}
+                        eventPropGetter={eventStyleGetter}
+                        culture="vi"
+                        messages={{
+                            next: "Sau",
+                            previous: "Trước",
+                            today: "Hôm nay",
+                            month: "Tháng",
+                            week: "Tuần",
+                            day: "Ngày"
+                        }}
+                    />
+                </div>
+            </TabsContent>
+
+            <TabsContent value="editorial" className="flex-1 h-full mt-0">
+                <div className="bg-card rounded-md border p-4 shadow-sm h-[600px]">
+                    <DnDCalendar
+                        localizer={localizer}
+                        events={editorialItems}
+                        startAccessor={(event: any) => event.start}
+                        endAccessor={(event: any) => event.end}
+                        style={{ height: '100%' }}
+                        view={view}
+                        onView={setView}
+                        date={date}
+                        onNavigate={setDate}
+                        selectable
+                        resizable
+                        onSelectSlot={handleSelectSlot}
+                        onSelectEvent={handleSelectEvent}
+                        onEventDrop={handleEventDrop}
+                        eventPropGetter={eventStyleGetter}
+                        culture="vi"
+                        messages={{
+                            next: "Sau",
+                            previous: "Trước",
+                            today: "Hôm nay",
+                            month: "Tháng",
+                            week: "Tuần",
+                            day: "Ngày"
+                        }}
+                    />
+                </div>
+            </TabsContent>
+
+            <TabsContent value="media" className="flex-1 h-full mt-0">
+                <div className="bg-card rounded-md border p-4 shadow-sm h-[600px]">
+                    <DnDCalendar
+                        localizer={localizer}
+                        events={mediaItems}
+                        startAccessor={(event: any) => event.start}
+                        endAccessor={(event: any) => event.end}
+                        style={{ height: '100%' }}
+                        view={view}
+                        onView={setView}
+                        date={date}
+                        onNavigate={setDate}
+                        selectable
+                        resizable
+                        onSelectSlot={handleSelectSlot}
+                        onSelectEvent={handleSelectEvent}
+                        onEventDrop={handleEventDrop}
+                        eventPropGetter={eventStyleGetter}
+                        culture="vi"
+                        messages={{
+                            next: "Sau",
+                            previous: "Trước",
+                            today: "Hôm nay",
+                            month: "Tháng",
+                            week: "Tuần",
+                            day: "Ngày"
+                        }}
+                    />
+                </div>
+            </TabsContent>
 
             <ContentDialog
                 open={dialogOpen}
@@ -209,6 +288,6 @@ export function CalendarView({ items, campaigns, members, userRole }: CalendarVi
                     setDialogOpen(false)
                 }}
             />
-        </div>
+        </Tabs>
     )
 }
