@@ -25,19 +25,19 @@ export default function ExecutiveLoginPage() {
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <Card className="w-full max-w-md">
-                <CardHeader className="space-y-1 text-center">
+            <div className="w-full max-w-md bg-white rounded-xl border shadow-sm overflow-hidden">
+                <div className="p-6 space-y-1 text-center">
                     <div className="flex justify-center mb-4">
                         <div className="p-3 bg-primary/10 rounded-full">
                             <Lock className="w-6 h-6 text-primary" />
                         </div>
                     </div>
-                    <CardTitle className="text-2xl font-bold">Executive Access</CardTitle>
-                    <CardDescription>
+                    <h2 className="text-2xl font-bold">Executive Access</h2>
+                    <p className="text-sm text-gray-500">
                         Nhập mật khẩu bảo mật để truy cập bảng điều khiển
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                    </p>
+                </div>
+                <div className="p-6 pt-0">
                     <form action={handleSubmit} className="space-y-4">
                         {error && (
                             <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
@@ -51,14 +51,15 @@ export default function ExecutiveLoginPage() {
                                 placeholder="Nhập mật khẩu..."
                                 required
                                 disabled={loading}
+                                className="w-full"
                             />
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading ? 'Đang kiểm tra...' : 'Truy cập'}
                         </Button>
                     </form>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     )
 }
