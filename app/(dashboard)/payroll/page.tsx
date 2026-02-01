@@ -67,6 +67,23 @@ export default async function PayrollPage() {
                 activeKPIs={activeKPIs || []}
                 currentUserRole={currentUserProfile?.role}
             />
+
+            {/* DEBUG SECTION - Remove after fixing */}
+            <div className="mt-8 p-4 bg-slate-100 rounded-lg text-xs font-mono border border-slate-300 overflow-auto max-h-96">
+                <h3 className="font-bold text-red-600 mb-2">🚧 DEBUG INFO (Server Data)</h3>
+                <p><strong>Server Time:</strong> {now.toString()}</p>
+                <p><strong>Query Range:</strong> {startOfMonth} to {endOfMonth}</p>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <strong>Found Content Items ({contentItems?.length || 0}):</strong>
+                        <pre>{JSON.stringify(contentItems, null, 2)}</pre>
+                    </div>
+                    <div>
+                        <strong>Member Rates (First 2):</strong>
+                        <pre>{JSON.stringify(members?.slice(0, 2).map(m => ({ name: m.full_name, rates: m.content_rates })), null, 2)}</pre>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }
