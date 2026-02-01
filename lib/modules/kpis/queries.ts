@@ -118,15 +118,30 @@ export async function getActiveKPIs(): Promise<KPI[]> {
                 .eq('assignee_id', kpi.user_id)
                 .in('status', ['published', 'completed'])
                 .gte('scheduled_date', kpi.start_date)
+                // Append time to cover the full end date
                 .lte('scheduled_date', kpi.end_date + 'T23:59:59')
 
             // Apply content type filter if specified
             if (contentType && contentType !== 'all') {
-                query = query.eq('type', contentType)
+                // Use ilike for case-insensitive matching
+                // Also handle simplified types (e.g. 'social_post' vs 'Social Post')
+                if (contentType.includes('_')) {
+                    // If type has underscore (e.g. social_post), try to match it or space version
+                    const spaceVersion = contentType.replace(/_/g, ' ')
+                    query = query.or(`type.eq.${contentType},type.ilike.${spaceVersion}`)
+                } else {
+                    query = query.ilike('type', contentType)
+                }
             }
 
-            const { count: contentCount } = await query
+            const { count: contentCount, error: countError } = await query
+
+            if (countError) {
+                console.error('Error counting content for KPI:', kpi.name, countError)
+            }
+
             count = contentCount || 0
+            console.log(`Phase Debug: Content Count for ${kpi.name} (${contentType}) = ${count}`)
 
         } else if (kpi.tracking_source === 'tasks') {
             // Task Tracking
