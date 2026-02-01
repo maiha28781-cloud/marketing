@@ -3,6 +3,8 @@ import { PayrollTable } from './components/payroll-table'
 import { BadgeDollarSign } from 'lucide-react'
 import { getActiveKPIs } from '@/lib/modules/kpis/queries'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PayrollPage() {
     const supabase = await createClient()
 
