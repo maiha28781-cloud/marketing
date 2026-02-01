@@ -4,8 +4,19 @@ import { SocialOverview } from './components/social-overview'
 import { ContentItem } from '@/lib/modules/calendar/types'
 import { Share2 } from 'lucide-react'
 
-export default async function SocialDashboardPage() {
+import { MonthPicker } from '@/components/shared/month-picker'
+
+export default async function SocialDashboardPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ month?: string }>
+}) {
     const supabase = await createClient()
+
+    // Await params
+    const params = await searchParams
+    const monthParam = params.month
+    const initialDate = monthParam ? new Date(`${monthParam}-01`) : undefined
 
     // Get current user
     const { data: { user } } = await supabase.auth.getUser()
@@ -30,11 +41,21 @@ export default async function SocialDashboardPage() {
         .select('id, full_name')
 
     // Fetch ONLY Social/Organic content (exclude ad_creative)
-    const { data: items } = await supabase
+    let query = supabase
         .from('content_items')
         .select('*')
         .neq('type', 'ad_creative')
-        .order('scheduled_date', { ascending: true })
+
+    if (initialDate) {
+        const year = initialDate.getFullYear()
+        const month = initialDate.getMonth()
+        const start = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString()
+        const end = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString()
+
+        query = query.gte('scheduled_date', start).lte('scheduled_date', end)
+    }
+
+    const { data: items } = await query.order('scheduled_date', { ascending: true })
 
     const socialItems = items as ContentItem[] || []
 
@@ -45,6 +66,10 @@ export default async function SocialDashboardPage() {
                     <Share2 className="h-8 w-8" />
                     Social Media Dashboard
                 </h2>
+
+                <div className="flex items-center gap-2">
+                    <MonthPicker />
+                </div>
             </div>
 
             <SocialOverview items={socialItems} />
@@ -55,7 +80,9 @@ export default async function SocialDashboardPage() {
                     campaigns={campaigns || []}
                     members={members || []}
                     userRole={profile?.role}
+
                     showTabs={false}
+                    initialDate={initialDate}
                 />
             </div>
         </div>

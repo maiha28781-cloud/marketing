@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 
-import { RealtimeListener } from '@/components/realtime-listener'
+
 
 export default async function DashboardLayout({
     children,
@@ -26,7 +26,7 @@ export default async function DashboardLayout({
 
     return (
         <SidebarProvider>
-            <RealtimeListener />
+
             <AppSidebar user={user} profile={profile} />
             <SidebarInset>
                 {children}

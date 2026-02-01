@@ -70,9 +70,34 @@ export async function getUserKPIs(userId: string): Promise<KPI[]> {
 /**
  * Get active KPIs (within current date range)
  */
-export async function getActiveKPIs(): Promise<KPI[]> {
+/**
+ * Get active KPIs (within date range relative to reference date)
+ * @param referenceDate Optional date for historical view (defaults to now)
+ */
+export async function getActiveKPIs(referenceDate?: Date): Promise<KPI[]> {
     const supabase = await createClient()
-    const today = new Date().toISOString().split('T')[0]
+
+    // Determine the reference date (VN timezone for consistency)
+    let targetDateStr: string
+
+    if (referenceDate) {
+        // If specific date provided (e.g. from picker), use it
+        targetDateStr = referenceDate.toISOString().split('T')[0]
+    } else {
+        // Default to "today" in VN time
+        const vnDate = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' })
+        targetDateStr = new Date(vnDate).toISOString().split('T')[0]
+    }
+
+    // Determine the month boundaries for the target date
+    // We want to find active KPIs that overlap with this month
+    // Logic: KPI Start <= Month End AND KPI End >= Month Start
+
+    // For simplicity, we stick to the existing "active on this specific day" logic first
+    // But for historical view, we often select the 1st of the month.
+    // Let's assume if referenceParam is passed, we check if KPI is active *at any point* in that month?
+    // OR just keep it simple: "Active on the selected reference date". 
+    // Since MonthPicker selects the 1st of the month, let's stick to "Active on Reference Date".
 
     const { data, error } = await supabase
         .from('kpis')
@@ -85,8 +110,8 @@ export async function getActiveKPIs(): Promise<KPI[]> {
         position
       )
     `)
-        .lte('start_date', today)
-        .gte('end_date', today)
+        .lte('start_date', targetDateStr)
+        .gte('end_date', targetDateStr)
         .order('created_at', { ascending: false })
 
     if (error) {
@@ -95,18 +120,33 @@ export async function getActiveKPIs(): Promise<KPI[]> {
     }
 
     // Auto-track logic
-    const enrichedKPIs = await Promise.all(data.map(async (kpi) => {
+    // Pass the reference date to calculate progress correctly for that period
+    return await calculateKPIProgress(supabase, data, referenceDate)
+}
+
+/**
+ * Shared function to calculate KPI progress based on tracking source
+ * Used by Dashboard and Executive View to ensure consistency
+ * @param referenceDate Optional date to limit the tracking window (for historical view)
+ */
+export async function calculateKPIProgress(supabase: any, kpis: KPI[], referenceDate?: Date): Promise<KPI[]> {
+    if (!kpis || kpis.length === 0) return []
+
+    const enrichedKPIs = await Promise.all(kpis.map(async (kpi) => {
         if (!kpi.auto_track) return kpi
 
         let count = 0
 
-        console.log('🔄 Auto-tracking KPI:', {
-            id: kpi.id,
-            name: kpi.name,
-            auto_track: kpi.auto_track,
-            tracking_source: kpi.tracking_source,
-            tracking_filter: kpi.tracking_filter
-        })
+        // Determine effective end date for calculation
+        // If referenceDate is provided (e.g. historical view), we should only count up to that month/date
+        // Actually, for "Monthly View", we typically want to see what happened in that entire month.
+        // But KPI has its own start/end. 
+        // If we overlap, we should respect the KPI's natural end date OR the reference month's end.
+        // For simplicity: We stick to the KPI's defined start/end dates. 
+        // The referenceDate only determines WHICH KPIs we pick (handled in getActiveKPIs).
+        // However, if we are recalculating for a past month, we might want to ensure we don't count future data?
+        // But "published" content won't change its date.
+        // So for now, standard logic is fine. KPI start/end are absolute.
 
         if (kpi.tracking_source === 'content') {
             // Content Tracking
@@ -121,6 +161,7 @@ export async function getActiveKPIs(): Promise<KPI[]> {
                 // Append time to cover the full end date
                 .lte('scheduled_date', kpi.end_date + 'T23:59:59')
 
+
             // Apply content type filter if specified
             if (contentType && contentType !== 'all') {
                 // Use ilike for case-insensitive matching
@@ -134,14 +175,8 @@ export async function getActiveKPIs(): Promise<KPI[]> {
                 }
             }
 
-            const { count: contentCount, error: countError } = await query
-
-            if (countError) {
-                console.error('Error counting content for KPI:', kpi.name, countError)
-            }
-
+            const { count: contentCount } = await query
             count = contentCount || 0
-            console.log(`Phase Debug: Content Count for ${kpi.name} (${contentType}) = ${count}`)
 
         } else if (kpi.tracking_source === 'tasks') {
             // Task Tracking
@@ -157,17 +192,14 @@ export async function getActiveKPIs(): Promise<KPI[]> {
             count = taskCount || 0
         }
 
-        console.log('✅ Calculated count for KPI', kpi.name, ':', count)
-
-        // Only update display value, do NOT write back to DB (to avoid race conditions/perf). 
-        // Admin calculates payroll based on this view.
+        // Only update display value, do NOT write back to DB
         return {
             ...kpi,
             current_value: count
         }
     }))
 
-    return enrichedKPIs || []
+    return enrichedKPIs
 }
 
 /**

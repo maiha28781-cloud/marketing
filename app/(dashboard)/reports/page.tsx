@@ -6,9 +6,19 @@ import { WeeklyReport as WeeklyReportView } from './components/weekly-report'
 import { MonthlyReport as MonthlyReportView } from './components/monthly-report'
 import { FileText } from 'lucide-react'
 
-export default async function ReportsPage() {
+import { MonthPicker } from '@/components/shared/month-picker'
+
+export default async function ReportsPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ month?: string }>
+}) {
+    const params = await searchParams
+    const monthParam = params.month
+    const referenceDate = monthParam ? new Date(`${monthParam}-01`) : undefined
+
     const weeklyReport = await getWeeklyReport()
-    const monthlyReport = await getMonthlyReport()
+    const monthlyReport = await getMonthlyReport(referenceDate)
 
     return (
         <div className="flex flex-col">
@@ -24,6 +34,9 @@ export default async function ReportsPage() {
                                 Báo cáo tổng hợp Tasks và KPIs
                             </p>
                         </div>
+                    </div>
+                    <div>
+                        <MonthPicker />
                     </div>
                 </div>
             </header>

@@ -104,8 +104,8 @@ export async function getCurrentWeekPeriod(): Promise<ReportPeriod> {
 /**
  * Get current month period
  */
-export async function getCurrentMonthPeriod(): Promise<ReportPeriod> {
-    const now = new Date()
+export async function getCurrentMonthPeriod(referenceDate?: Date): Promise<ReportPeriod> {
+    const now = referenceDate || new Date()
     const start = startOfMonth(now)
     const end = endOfMonth(now)
 
@@ -395,8 +395,8 @@ export async function getWeeklyReport(): Promise<WeeklyReport> {
 /**
  * Get monthly report
  */
-export async function getMonthlyReport(): Promise<MonthlyReport> {
-    const period = await getCurrentMonthPeriod()
+export async function getMonthlyReport(referenceDate?: Date): Promise<MonthlyReport> {
+    const period = await getCurrentMonthPeriod(referenceDate)
     const tasks = await getTaskReport(period.start, period.end)
     const kpis = await getKPIReport(period.start, period.end)
     const budget = await getBudgetReport(period.start, period.end)

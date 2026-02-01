@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { calculateKPIProgress } from '@/lib/modules/kpis/queries'
 
 const EXECUTIVE_PASSWORD = process.env.EXECUTIVE_PASSWORD
 // Cookie expires in 30 days
@@ -50,8 +51,14 @@ async function createAdminClient() {
     )
 }
 
-export async function getExecutiveData() {
+export async function getExecutiveData(date?: Date) {
     const supabase = await createAdminClient()
+
+    const targetDate = date || new Date()
+    const year = targetDate.getFullYear()
+    const month = targetDate.getMonth()
+    const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString()
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString()
 
     // 1. Fetch Campaigns & Budget
     // Note: fetching all campaigns to match Budget View
@@ -72,6 +79,8 @@ export async function getExecutiveData() {
         .select('actual_cost, campaign_id')
         .gt('actual_cost', 0)
         .eq('type', 'ad_creative') // Only include Ad Creative items in budget logic
+        .gte('scheduled_date', startOfMonth)
+        .lte('scheduled_date', endOfMonth)
 
     let totalBudget = 0
     let totalSpent = 0
@@ -101,6 +110,8 @@ export async function getExecutiveData() {
     const { data: tasks } = await supabase
         .from('tasks')
         .select('status')
+        .gte('created_at', startOfMonth)
+        .lte('created_at', endOfMonth)
 
     const taskStats = {
         total: tasks?.length || 0,
@@ -110,12 +121,23 @@ export async function getExecutiveData() {
         done: tasks?.filter(t => t.status === 'done').length || 0,
     }
 
+
+
+
+
     // 3. Fetch KPI Stats (Detailed)
     // Fetch top 5 KPIs
-    const { data: kpis } = await supabase
+    const { data: rawKpis } = await supabase
         .from('kpis')
-        .select('name, current_value, target_value, unit')
+        .select('*') // Need all fields for calculation
+        .lte('start_date', targetDate.toISOString().split('T')[0])
+        .gte('end_date', targetDate.toISOString().split('T')[0])
+        .order('created_at', { ascending: false })
         .limit(5)
+
+    // Calculate live progress
+    // @ts-ignore
+    const kpis = rawKpis ? await calculateKPIProgress(supabase, rawKpis, targetDate) : []
 
     let avgKpi = 0
     let kpiDetails: any[] = []

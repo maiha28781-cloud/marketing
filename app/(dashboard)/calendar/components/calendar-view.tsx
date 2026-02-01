@@ -32,6 +32,7 @@ interface CalendarViewProps {
     members: { id: string; full_name: string }[]
     userRole?: string
     showTabs?: boolean
+    initialDate?: Date
 }
 
 const PLATFORM_COLORS: Record<string, string> = {
@@ -53,10 +54,10 @@ import { useToast } from '@/hooks/use-toast'
 
 const DnDCalendar = withDragAndDrop(Calendar)
 
-export function CalendarView({ items, campaigns, members, userRole, showTabs = true }: CalendarViewProps) {
+export function CalendarView({ items, campaigns, members, userRole, showTabs = true, initialDate }: CalendarViewProps) {
     const { toast } = useToast()
     const [view, setView] = useState<View>(Views.MONTH)
-    const [date, setDate] = useState(new Date())
+    const [date, setDate] = useState(initialDate || new Date())
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
     const [selectedItem, setSelectedItem] = useState<ContentItem | undefined>(undefined)
@@ -83,6 +84,13 @@ export function CalendarView({ items, campaigns, members, userRole, showTabs = t
     useEffect(() => {
         setLocalItems(items)
     }, [items])
+
+    // Sync date with initialDate prop
+    useEffect(() => {
+        if (initialDate) {
+            setDate(initialDate)
+        }
+    }, [initialDate])
 
     // Subscribe to realtime changes
     useEffect(() => {

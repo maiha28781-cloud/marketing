@@ -8,10 +8,12 @@ import { KanbanBoard } from './components/kanban-board'
 import { CreateTaskDialog } from './components/create-task-dialog'
 import { ViewSwitcher } from './components/view-switcher'
 
+import { MonthPicker } from '@/components/shared/month-picker'
+
 export default async function TasksPage({
     searchParams,
 }: {
-    searchParams: Promise<{ view?: string }>
+    searchParams: Promise<{ view?: string; month?: string }>
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -33,12 +35,18 @@ export default async function TasksPage({
         .select('id, full_name, email, position, role, avatar_url')
         .order('full_name')
 
-    const tasks = await getTasks()
-    const stats = await getTaskStats(user.id)
+        .order('full_name')
 
-    // Await searchParams in Next.js 15
+    // Await searchParams first (Next.js 15)
     const params = await searchParams
     const view = params.view || 'kanban'
+
+    // Parse date filter
+    const monthParam = params.month
+    const referenceDate = monthParam ? new Date(`${monthParam}-01`) : undefined
+
+    const tasks = await getTasks(referenceDate)
+    const stats = await getTaskStats(user.id, referenceDate)
 
     return (
         <div className="flex flex-col">
@@ -53,6 +61,7 @@ export default async function TasksPage({
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <MonthPicker />
                         <ViewSwitcher currentView={view} />
                         <CreateTaskDialog
                             teamMembers={teamMembers || []}

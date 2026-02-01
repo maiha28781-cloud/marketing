@@ -8,7 +8,15 @@ import { KPIList } from './components/kpi-list'
 import { KPIOverviewCharts } from './components/kpi-overview-charts'
 import { Target, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react'
 
-export default async function KPIsPage() {
+import { MonthPicker } from '@/components/shared/month-picker'
+
+export const dynamic = 'force-dynamic'
+
+interface KPIsPageProps {
+    searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function KPIsPage({ searchParams }: KPIsPageProps) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -29,7 +37,11 @@ export default async function KPIsPage() {
         .select('id, full_name, email, position')
         .order('full_name')
 
-    const kpis = await getActiveKPIs()  // Use getActiveKPIs for auto-track support!
+    // Parse date filter
+    const monthParam = typeof searchParams.month === 'string' ? searchParams.month : undefined
+    const referenceDate = monthParam ? new Date(`${monthParam}-01`) : undefined
+
+    const kpis = await getActiveKPIs(referenceDate)  // Use getActiveKPIs for auto-track support!
     const stats = await getKPIStats()
     const summaries = await getKPISummaryByUser()
 
@@ -45,6 +57,9 @@ export default async function KPIsPage() {
                             Quản lý KPI của team
                         </p>
                     </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <MonthPicker />
                     {profile?.role === 'admin' && (
                         <CreateKPIDialog teamMembers={teamMembers || []} currentUserId={user.id} />
                     )}

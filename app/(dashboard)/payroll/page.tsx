@@ -2,10 +2,15 @@ import { createClient } from '@/lib/supabase/server'
 import { PayrollTable } from './components/payroll-table'
 import { BadgeDollarSign } from 'lucide-react'
 import { getActiveKPIs } from '@/lib/modules/kpis/queries'
+import { MonthPicker } from '@/components/shared/month-picker'
 
 export const dynamic = 'force-dynamic'
 
-export default async function PayrollPage() {
+interface PayrollPageProps {
+    searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function PayrollPage({ searchParams }: PayrollPageProps) {
     const supabase = await createClient()
 
     // Get current user
@@ -39,7 +44,9 @@ export default async function PayrollPage() {
     // For now, let's fetch all published content this month.
 
     // Fix Timezone: Always use Vietnam time for month calculation
-    const now = new Date()
+    const monthParam = typeof searchParams.month === 'string' ? searchParams.month : undefined
+    // If param exists, append -01 to make it a valid date. Otherwise use now.
+    const now = monthParam ? new Date(`${monthParam}-01`) : new Date()
 
     // Get current month/year in VN time
     const vnDateString = now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }) // "2/1/2026, 11:30:00 AM"
@@ -70,8 +77,8 @@ export default async function PayrollPage() {
                     <BadgeDollarSign className="h-8 w-8" />
                     Estimated Payroll
                 </h2>
-                <div className="text-sm text-muted-foreground">
-                    Month: {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                <div className="flex items-center gap-2">
+                    <MonthPicker />
                 </div>
             </div>
 

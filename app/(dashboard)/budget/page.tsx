@@ -7,7 +7,13 @@ import { BudgetOverviewStats } from './components/budget-overview'
 import { CampaignBudgetList } from './components/campaign-budget-list'
 import { CreateCampaignDialog } from './components/create-campaign-dialog'
 
-export default async function BudgetPage() {
+import { MonthPicker } from '@/components/shared/month-picker'
+
+export default async function BudgetPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ month?: string }>
+}) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -19,7 +25,12 @@ export default async function BudgetPage() {
         .single()
 
     const isAdmin = profile?.role === 'admin'
-    const budgetData = await getBudgetOverview()
+
+    const params = await searchParams
+    const monthParam = params.month
+    const referenceDate = monthParam ? new Date(`${monthParam}-01`) : undefined
+
+    const budgetData = await getBudgetOverview(referenceDate)
 
     return (
         <div className="flex flex-col h-full">
@@ -37,7 +48,10 @@ export default async function BudgetPage() {
                         </div>
                     </div>
                 </div>
-                {isAdmin && <CreateCampaignDialog />}
+                <div className="flex items-center gap-2">
+                    <MonthPicker />
+                    {isAdmin && <CreateCampaignDialog />}
+                </div>
             </header>
 
             <main className="flex-1 p-6 space-y-8 overflow-y-auto">

@@ -26,7 +26,7 @@ export interface BudgetOverview {
     recent_expenses: ContentItem[]
 }
 
-export async function getBudgetOverview(): Promise<BudgetOverview> {
+export async function getBudgetOverview(referenceDate?: Date): Promise<BudgetOverview> {
     const supabase = await createClient()
 
     // Fetch active campaigns
@@ -49,13 +49,23 @@ export async function getBudgetOverview(): Promise<BudgetOverview> {
     const campaignIds = campaigns.map(c => c.id)
 
     // Fetch content items with cost for these campaigns
-    const { data: itemsData } = await supabase
+    let query = supabase
         .from('content_items')
         .select('*, campaign:campaigns(name)')
         .in('campaign_id', campaignIds)
         .eq('type', 'ad_creative') // Only include Ad Creative items in budget
         .gt('actual_cost', 0) // Only items with actual cost
-        .order('updated_at', { ascending: false })
+
+    if (referenceDate) {
+        const year = referenceDate.getFullYear()
+        const month = referenceDate.getMonth()
+        const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString()
+        const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString()
+
+        query = query.gte('scheduled_date', startOfMonth).lte('scheduled_date', endOfMonth)
+    }
+
+    const { data: itemsData } = await query.order('updated_at', { ascending: false })
 
     const items = itemsData as ContentItem[] || []
 

@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 
+import { RealtimeListener } from "@/components/realtime-listener"
+
 export const metadata: Metadata = {
   title: "Marketing OS - Team Management",
   description: "Ứng dụng quản lý team marketing toàn diện",
@@ -24,6 +26,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <TooltipProvider>
+            <RealtimeListener />
             {children}
             <Toaster />
           </TooltipProvider>

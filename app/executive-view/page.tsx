@@ -5,9 +5,15 @@ import { CheckCircle2, AlertCircle, TrendingUp, DollarSign } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 
+import { MonthPicker } from '@/components/shared/month-picker'
+
 export const dynamic = 'force-dynamic'
 
-export default async function ExecutiveDashboardPage() {
+interface ExecutivePageProps {
+    searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default async function ExecutiveDashboardPage({ searchParams }: ExecutivePageProps) {
     // Basic protection check (secondary to middleware)
     const cookieStore = await cookies()
     const session = cookieStore.get('executive_session')
@@ -15,7 +21,10 @@ export default async function ExecutiveDashboardPage() {
         redirect('/executive-view/login')
     }
 
-    const data = await getExecutiveData()
+    const monthParam = typeof searchParams.month === 'string' ? searchParams.month : undefined
+    const targetDate = monthParam ? new Date(`${monthParam}-01`) : undefined
+
+    const data = await getExecutiveData(targetDate)
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -28,8 +37,8 @@ export default async function ExecutiveDashboardPage() {
                         </div>
                         <span className="font-semibold text-lg">Marketing OS <span className="text-muted-foreground font-normal">| Executive View</span></span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                        Tháng 01/2026
+                    <div>
+                        <MonthPicker />
                     </div>
                 </div>
             </header>
