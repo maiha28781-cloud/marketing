@@ -38,9 +38,23 @@ export default async function PayrollPage() {
     // Ideally we want content items where assignee is in the members list.
     // For now, let's fetch all published content this month.
 
+    // Fix Timezone: Always use Vietnam time for month calculation
     const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString()
+
+    // Get current month/year in VN time
+    const vnDateString = now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }) // "2/1/2026, 11:30:00 AM"
+    const vnDate = new Date(vnDateString)
+    const year = vnDate.getFullYear()
+    const month = vnDate.getMonth() // 0-indexed
+
+    // Calculate start/end of month in UTC but aligned with VN day boundaries
+    // We want content that falls within Feb 1 00:00 VN to Feb 28 23:59 VN
+    // Start: YYYY-MM-01T00:00:00+07:00 -> ISO
+    const startOfMonth = new Date(Date.UTC(year, month, 1, -7, 0, 0)).toISOString()
+
+    // End: YYYY-MM-NextMonth-00T23:59:59+07:00 -> ISO
+    // trick: using day 0 of next month gives last day of current month
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 16, 59, 59, 999)).toISOString()
 
     const { data: contentItems } = await supabase
         .from('content_items')
