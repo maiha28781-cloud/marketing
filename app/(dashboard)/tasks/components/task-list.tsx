@@ -63,6 +63,16 @@ const priorityLabels = {
     urgent: 'Urgent',
 }
 
+const positionColors: Record<string, string> = {
+    manager: 'border-l-4 border-l-indigo-600',
+    content: 'border-l-4 border-l-purple-400',
+    social_media: 'border-l-4 border-l-purple-400',
+    performance: 'border-l-4 border-l-green-500',
+    designer: 'border-l-4 border-l-pink-500',
+    editor: 'border-l-4 border-l-slate-500',
+    member: 'border-l-4 border-l-gray-300',
+}
+
 export function TaskList({ tasks, teamMembers, currentUserId, userRole }: TaskListProps) {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null)
     const [isEditing, setIsEditing] = useState(false)
@@ -105,74 +115,80 @@ export function TaskList({ tasks, teamMembers, currentUserId, userRole }: TaskLi
     return (
         <>
             <div className="space-y-3">
-                {tasks.map((task) => (
-                    <Card key={task.id} className="p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 space-y-2">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="font-semibold">{task.title}</h3>
-                                    <Badge variant="outline" className={statusColors[task.status]}>
-                                        {statusLabels[task.status]}
-                                    </Badge>
-                                    <Badge variant="secondary" className={priorityColors[task.priority]}>
-                                        {priorityLabels[task.priority]}
-                                    </Badge>
-                                </div>
+                {tasks.map((task) => {
+                    const positionColorClass = task.assignee?.position
+                        ? positionColors[task.assignee.position] || positionColors.member
+                        : 'border-l-4 border-l-transparent'
 
-                                {task.description && (
-                                    <p className="text-sm text-muted-foreground">{task.description}</p>
-                                )}
+                    return (
+                        <Card key={task.id} className={`p-4 hover:shadow-md transition-shadow ${positionColorClass}`}>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold">{task.title}</h3>
+                                        <Badge variant="outline" className={statusColors[task.status]}>
+                                            {statusLabels[task.status]}
+                                        </Badge>
+                                        <Badge variant="secondary" className={priorityColors[task.priority]}>
+                                            {priorityLabels[task.priority]}
+                                        </Badge>
+                                    </div>
 
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                    {task.assignee && (
-                                        <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4" />
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarFallback className="text-xs">
-                                                    {getInitials(task.assignee.full_name)}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <span>{task.assignee.full_name}</span>
-                                        </div>
+                                    {task.description && (
+                                        <p className="text-sm text-muted-foreground">{task.description}</p>
                                     )}
 
-                                    {task.due_date && (
-                                        <div className="flex items-center gap-1">
-                                            <Calendar className="h-4 w-4" />
-                                            <span>
-                                                {format(new Date(task.due_date), 'dd MMM yyyy', { locale: vi })}
-                                            </span>
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                        {task.assignee && (
+                                            <div className="flex items-center gap-2">
+                                                <User className="h-4 w-4" />
+                                                <Avatar className="h-6 w-6">
+                                                    <AvatarFallback className="text-xs">
+                                                        {getInitials(task.assignee.full_name)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <span>{task.assignee.full_name}</span>
+                                            </div>
+                                        )}
+
+                                        {task.due_date && (
+                                            <div className="flex items-center gap-1">
+                                                <Calendar className="h-4 w-4" />
+                                                <span>
+                                                    {format(new Date(task.due_date), 'dd MMM yyyy', { locale: vi })}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                setSelectedTask(task)
+                                                setIsEditing(true)
+                                            }}
+                                        >
+                                            Chỉnh sửa
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            className="text-red-600"
+                                            onClick={() => setTaskToDelete(task.id)}
+                                        >
+                                            Xóa
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
-
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                        onClick={() => {
-                                            setSelectedTask(task)
-                                            setIsEditing(true)
-                                        }}
-                                    >
-                                        Chỉnh sửa
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        className="text-red-600"
-                                        onClick={() => setTaskToDelete(task.id)}
-                                    >
-                                        Xóa
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </Card>
-                ))}
+                        </Card>
+                    )
+                })}
             </div>
 
             {/* Edit Dialog */}

@@ -33,6 +33,7 @@ const positionLabels: Record<string, string> = {
     social_media: 'Social Media',
     performance: 'Performance Marketing',
     designer: 'Designer',
+    editor: 'Video Editor',
     member: 'Member',
 }
 

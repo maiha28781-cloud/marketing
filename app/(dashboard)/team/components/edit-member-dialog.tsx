@@ -32,7 +32,8 @@ const positionOptions = [
     { value: 'content', label: 'Content Creator' },
     { value: 'social_media', label: 'Social Media Specialist' },
     { value: 'performance', label: 'Performance Marketing' },
-    { value: 'designer', label: 'Designer / Video Editor' },
+    { value: 'designer', label: 'Designer' },
+    { value: 'editor', label: 'Video Editor' },
     { value: 'member', label: 'Member' },
 ]
 

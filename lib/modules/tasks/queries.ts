@@ -1,7 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { Task } from './types'
 
-export async function getTasks(referenceDate?: Date): Promise<Task[]> {
+export interface GetTasksOptions {
+    referenceDate?: Date
+    assigneeId?: string
+    status?: string
+    priority?: string
+}
+
+export async function getTasks(options: GetTasksOptions = {}): Promise<Task[]> {
     const supabase = await createClient()
 
     let query = supabase
@@ -12,18 +19,28 @@ export async function getTasks(referenceDate?: Date): Promise<Task[]> {
       creator:created_by(id, full_name, email)
     `)
 
-    if (referenceDate) {
-        const year = referenceDate.getFullYear()
-        const month = referenceDate.getMonth()
+    if (options.referenceDate) {
+        const year = options.referenceDate.getFullYear()
+        const month = options.referenceDate.getMonth()
         const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString()
         const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString()
 
-        // User request: "Filter task by completion month"
-        // So we strictly filter for Done tasks in that period
         query = query
             .eq('status', 'done')
             .gte('completed_at', startOfMonth)
             .lte('completed_at', endOfMonth)
+    }
+
+    if (options.assigneeId && options.assigneeId !== 'all') {
+        query = query.eq('assigned_to', options.assigneeId)
+    }
+
+    if (options.status && options.status !== 'all') {
+        query = query.eq('status', options.status)
+    }
+
+    if (options.priority && options.priority !== 'all') {
+        query = query.eq('priority', options.priority)
     }
 
     const { data, error } = await query.order('created_at', { ascending: false })

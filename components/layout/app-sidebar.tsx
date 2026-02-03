@@ -42,7 +42,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { NotificationBell } from '@/components/notifications/notification-bell'
+import { NotificationsBell } from '@/components/notifications-bell'
 
 interface AppSidebarProps {
     user: any
@@ -126,7 +126,7 @@ export function AppSidebar({ user, profile }: AppSidebarProps) {
                                 <p className="text-xs text-muted-foreground">Team Management</p>
                             </div>
                         </div>
-                        <NotificationBell />
+                        <NotificationsBell />
                     </div>
                 </SidebarHeader>
 

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getTasks, getTaskStats } from '@/lib/modules/tasks/queries'
+import { getSavedViews } from '@/lib/modules/saved-views/actions'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,13 +8,22 @@ import { TaskList } from './components/task-list'
 import { KanbanBoard } from './components/kanban-board'
 import { CreateTaskDialog } from './components/create-task-dialog'
 import { ViewSwitcher } from './components/view-switcher'
+import { TaskFilters } from './components/task-filters'
+import { TaskTabs } from './components/task-tabs'
 
 import { MonthPicker } from '@/components/shared/month-picker'
 
 export default async function TasksPage({
     searchParams,
 }: {
-    searchParams: Promise<{ view?: string; month?: string }>
+    searchParams: Promise<{
+        view?: string;
+        month?: string;
+        assignee?: string;
+        status?: string;
+        priority?: string;
+        activeView?: string;
+    }>
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -35,17 +45,27 @@ export default async function TasksPage({
         .select('id, full_name, email, position, role, avatar_url')
         .order('full_name')
 
-        .order('full_name')
+    // Get saved views
+    const { data: savedViews } = await getSavedViews()
 
     // Await searchParams first (Next.js 15)
     const params = await searchParams
     const view = params.view || 'kanban'
+    const assigneeId = params.assignee
+    const status = params.status
+    const priority = params.priority
 
     // Parse date filter
     const monthParam = params.month
     const referenceDate = monthParam ? new Date(`${monthParam}-01`) : undefined
 
-    const tasks = await getTasks(referenceDate)
+    const tasks = await getTasks({
+        referenceDate,
+        assigneeId,
+        status,
+        priority
+    })
+
     const stats = await getTaskStats(user.id, referenceDate)
 
     return (
@@ -56,23 +76,38 @@ export default async function TasksPage({
                 <div className="flex flex-1 items-center justify-between">
                     <div>
                         <h1 className="text-lg font-semibold">Tasks</h1>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground hidden sm:block">
                             Quản lý công việc của team
                         </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <MonthPicker />
-                        <ViewSwitcher currentView={view} />
-                        <CreateTaskDialog
-                            teamMembers={teamMembers || []}
-                            currentUserId={user.id}
-                            currentUserRole={profile?.role}
-                        />
                     </div>
                 </div>
             </header>
 
             <main className="flex-1 p-6 space-y-6">
+                {/* Custom Filters View */}
+                <div className="flex flex-col gap-4">
+                    <TaskTabs savedViews={savedViews || []} />
+
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <TaskFilters
+                            teamMembers={teamMembers || []}
+                            currentAssignee={assigneeId}
+                            currentStatus={status}
+                            currentPriority={priority}
+                        />
+
+                        <div className="flex items-center gap-3">
+                            <MonthPicker />
+                            <ViewSwitcher currentView={view} />
+                            <CreateTaskDialog
+                                teamMembers={teamMembers || []}
+                                currentUserId={user.id}
+                                currentUserRole={profile?.role}
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 {/* Stats Cards */}
                 <div className="grid gap-4 md:grid-cols-5">
                     <Card>

@@ -63,6 +63,26 @@ const priorityLabels = {
     urgent: 'Urgent',
 } as const
 
+const positionColors: Record<string, string> = {
+    manager: 'border-l-4 border-l-indigo-600',
+    content: 'border-l-4 border-l-purple-400',
+    social_media: 'border-l-4 border-l-purple-400',
+    performance: 'border-l-4 border-l-green-500',
+    designer: 'border-l-4 border-l-pink-500',
+    editor: 'border-l-4 border-l-slate-500',
+    member: 'border-l-4 border-l-gray-300',
+}
+
+const positionLabels: Record<string, string> = {
+    manager: 'Manager',
+    content: 'Content',
+    social_media: 'Social',
+    performance: 'Performance',
+    designer: 'Designer',
+    editor: 'Editor',
+    member: 'Member',
+}
+
 const columns = [
     { id: 'todo', label: 'Todo', color: 'bg-slate-50' },
     { id: 'doing', label: 'Doing', color: 'bg-blue-50' },
@@ -476,11 +496,15 @@ function SortableTaskCard({ task, onEdit, onDelete }: { task: Task; onEdit: () =
             .substring(0, 2)
     }
 
+    const positionColorClass = task.assignee?.position
+        ? positionColors[task.assignee.position] || positionColors.member
+        : 'border-l-4 border-l-transparent'
+
     return (
         <Card
             ref={setNodeRef}
             style={style}
-            className="p-3 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+            className={`p-3 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow ${positionColorClass}`}
             onClick={onEdit}
             {...attributes}
             {...listeners}
@@ -526,7 +550,9 @@ function SortableTaskCard({ task, onEdit, onDelete }: { task: Task; onEdit: () =
                                     {getInitials(task.assignee.full_name)}
                                 </AvatarFallback>
                             </Avatar>
-                            <span className="text-xs text-muted-foreground truncate">{task.assignee.full_name.split(' ').slice(-1)}</span>
+                            <span className="text-xs text-muted-foreground truncate max-w-[100px]" title={task.assignee.full_name}>
+                                {task.assignee.full_name}
+                            </span>
                         </div>
                     ) : (
                         <span className="text-xs text-muted-foreground">Chưa giao</span>
