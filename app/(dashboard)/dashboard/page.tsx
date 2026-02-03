@@ -49,6 +49,16 @@ export default async function DashboardPage() {
         }, 0) / myKPIsFiltered.length)
         : 0
 
+    // Get Performance Team KPIs
+    const perfKPIs = myKPIs.filter(k => k.user?.position === 'performance')
+    const totalLeadsKPI = perfKPIs.find(k => k.name.toLowerCase().includes('lead') || k.name.toLowerCase().includes('khách'))
+    const perfKPIAvg = perfKPIs.length > 0
+        ? Math.round(perfKPIs.reduce((sum, k) => {
+            const pct = k.target_value > 0 ? (k.current_value / k.target_value) * 100 : 0
+            return sum + pct
+        }, 0) / perfKPIs.length)
+        : 0
+
     // Get team count
     const { count: teamCount } = await supabase
         .from('profiles')
@@ -89,7 +99,6 @@ export default async function DashboardPage() {
                         </CardContent>
                     </Card>
 
-                    {/* KPI Performance */}
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-sm font-medium">KPI Performance</CardTitle>
@@ -105,6 +114,32 @@ export default async function DashboardPage() {
                                     Chi tiết →
                                 </Button>
                             </Link>
+                        </CardContent>
+                    </Card>
+
+                    {/* Performance Leads (New) */}
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium">Performance / Leads</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-green-600">
+                                {totalLeadsKPI ? totalLeadsKPI.current_value : perfKPIAvg + '%'}
+                                {totalLeadsKPI && <span className="text-sm font-normal text-muted-foreground ml-1">/ {totalLeadsKPI.target_value}</span>}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {totalLeadsKPI ? 'Leads tháng này' : 'Trung bình KPI Performance'}
+                            </p>
+                            {totalLeadsKPI ? (
+                                <Progress value={(totalLeadsKPI.current_value / totalLeadsKPI.target_value) * 100} className="mt-2 h-1" />
+                            ) : (
+                                <Link href="/kpis">
+                                    <Button variant="link" className="px-0 h-auto mt-2 text-xs">
+                                        Chi tiết metrics →
+                                    </Button>
+                                </Link>
+                            )}
                         </CardContent>
                     </Card>
 

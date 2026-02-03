@@ -35,15 +35,22 @@ interface CalendarViewProps {
     initialDate?: Date
 }
 
-const PLATFORM_COLORS: Record<string, string> = {
-    facebook: '#1877F2',
-    instagram: '#E1306C',
-    tiktok: '#000000',
-    youtube: '#FF0000',
-    linkedin: '#0A66C2',
-    website: '#2ecc71',
-    email: '#f1c40f',
-    other: '#95a5a6'
+const STATUS_COLORS: Record<string, string> = {
+    idea: '#94a3b8',      // Slate 400
+    draft: '#64748b',     // Slate 500
+    in_review: '#f59e0b', // Amber 500
+    scheduled: '#3b82f6', // Blue 500
+    published: '#22c55e', // Green 500
+    cancelled: '#ef4444', // Red 500
+}
+
+const TYPE_LABELS: Record<string, string> = {
+    social_post: 'Social',
+    blog_post: 'Blog',
+    video: 'Video',
+    ad_creative: 'Ads',
+    email: 'Email',
+    other: 'Other'
 }
 
 import Link from 'next/link'
@@ -151,20 +158,32 @@ export function CalendarView({ items, campaigns, members, userRole, showTabs = t
     }
 
     const eventStyleGetter = (event: any) => {
-        const platform = event.resource.platform
-        const color = PLATFORM_COLORS[platform] || '#95a5a6'
+        const status = event.resource.status || 'idea'
+        const color = STATUS_COLORS[status] || '#94a3b8'
 
         return {
             style: {
                 backgroundColor: color,
                 borderRadius: '4px',
-                opacity: 0.8,
+                opacity: 0.9,
                 color: 'white',
                 border: '0px',
-                display: 'block'
+                display: 'block',
+                padding: '2px 4px'
             }
         }
     }
+
+    const CustomEvent = ({ event }: any) => (
+        <div className="flex flex-col leading-tight">
+            <span className="text-[10px] font-bold uppercase tracking-wider opacity-90">
+                {TYPE_LABELS[event.resource.type] || event.resource.type}
+            </span>
+            <span className="text-xs font-medium truncate">
+                {event.title}
+            </span>
+        </div>
+    )
 
     // Filter items based on active tab logic
     const editorialItems = events.filter(e => e.resource.type !== 'ad_creative')
@@ -188,6 +207,9 @@ export function CalendarView({ items, campaigns, members, userRole, showTabs = t
                 onSelectEvent={handleSelectEvent}
                 onEventDrop={handleEventDrop}
                 eventPropGetter={eventStyleGetter}
+                components={{
+                    event: CustomEvent
+                }}
                 culture="vi"
                 messages={{
                     next: "Sau",

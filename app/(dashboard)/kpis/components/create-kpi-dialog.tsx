@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -61,11 +62,14 @@ export function CreateKPIDialog({ teamMembers, currentUserId }: CreateKPIDialogP
     const [trackingSource, setTrackingSource] = useState<TrackingSource>('tasks')
     const [contentType, setContentType] = useState<ContentType>('blog_post')
 
+    const router = useRouter() // Import needed
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsSubmitting(true)
+        const form = e.currentTarget // Capture form reference
 
-        const formData = new FormData(e.currentTarget)
+        const formData = new FormData(form)
 
         const kpiType = formData.get('kpi_type') as KPIType
         const selectedKPIOption = kpiTypeOptions.find(opt => opt.value === kpiType)
@@ -99,20 +103,14 @@ export function CreateKPIDialog({ teamMembers, currentUserId }: CreateKPIDialogP
             end_date: formData.get('end_date') as string,
         }
 
-        // Debug log
-        console.log('🔍 CreateKPI Input:', {
-            auto_track: input.auto_track,
-            tracking_source: input.tracking_source,
-            tracking_filter: input.tracking_filter
-        })
-
         const result = await createKPI(input)
 
         if (result.error) {
             alert(`Lỗi: ${result.error}`)
         } else {
             setOpen(false)
-            e.currentTarget.reset()
+            form.reset() // Use captured reference
+            router.refresh() // Refresh data
         }
 
         setIsSubmitting(false)

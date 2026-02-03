@@ -11,6 +11,16 @@ interface SocialOverviewProps {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#ffc658']
 
+const STATUS_COLORS: Record<string, string> = {
+    idea: '#94a3b8',      // Slate 400
+    draft: '#64748b',     // Slate 500
+    review: '#f59e0b',    // Amber 500
+    scheduled: '#3b82f6', // Blue 500
+    published: '#22c55e', // Green 500
+    completed: '#22c55e', // Green 500
+    cancelled: '#ef4444', // Red 500
+}
+
 export function SocialOverview({ items }: SocialOverviewProps) {
     // Current month items for summary cards
     const now = new Date()
@@ -160,7 +170,11 @@ export function SocialOverview({ items }: SocialOverviewProps) {
                                     <XAxis type="number" allowDecimals={false} />
                                     <YAxis dataKey="name" type="category" width={80} tickFormatter={(value) => value.charAt(0).toUpperCase() + value.slice(1)} />
                                     <Tooltip />
-                                    <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} name="Posts" />
+                                    <Bar dataKey="value" radius={[0, 4, 4, 0]} name="Posts">
+                                        {statusData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || '#3b82f6'} />
+                                        ))}
+                                    </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
