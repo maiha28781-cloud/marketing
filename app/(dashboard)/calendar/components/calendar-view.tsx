@@ -13,6 +13,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Plus } from 'lucide-react'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './calendar.css' // Custom styles
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 const locales = {
     'vi': vi,
@@ -174,15 +179,49 @@ export function CalendarView({ items, campaigns, members, userRole, showTabs = t
         }
     }
 
+
+
     const CustomEvent = ({ event }: any) => (
-        <div className="flex flex-col leading-tight">
-            <span className="text-[10px] font-bold uppercase tracking-wider opacity-90">
-                {TYPE_LABELS[event.resource.type] || event.resource.type}
-            </span>
-            <span className="text-xs font-medium truncate">
-                {event.title}
-            </span>
-        </div>
+        <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+                <div className="flex flex-col leading-tight w-full h-full">
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-90">
+                        {TYPE_LABELS[event.resource.type] || event.resource.type}
+                    </span>
+                    <span className="text-xs font-medium truncate">
+                        {event.title}
+                    </span>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs p-3">
+                <div className="space-y-1">
+                    <h4 className="font-bold text-sm leading-none">{event.title}</h4>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                        <div className="flex gap-2">
+                            <span className="font-semibold">Type:</span> {TYPE_LABELS[event.resource.type] || event.resource.type}
+                        </div>
+                        <div className="flex gap-2">
+                            <span className="font-semibold">Status:</span>
+                            <span className="capitalize">{event.resource.status}</span>
+                        </div>
+                        <div className="flex gap-2">
+                            <span className="font-semibold">Platform:</span>
+                            <span className="capitalize">{event.resource.platform}</span>
+                        </div>
+                        {event.resource.assignee && (
+                            <div className="flex gap-2">
+                                <span className="font-semibold">Assignee:</span> {event.resource.assignee.full_name}
+                            </div>
+                        )}
+                        {event.resource.campaign && (
+                            <div className="flex gap-2">
+                                <span className="font-semibold">Campaign:</span> {event.resource.campaign.name}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </TooltipContent>
+        </Tooltip>
     )
 
     // Filter items based on active tab logic
@@ -203,6 +242,7 @@ export function CalendarView({ items, campaigns, members, userRole, showTabs = t
                 onNavigate={setDate}
                 selectable
                 resizable
+                popup
                 onSelectSlot={handleSelectSlot}
                 onSelectEvent={handleSelectEvent}
                 onEventDrop={handleEventDrop}

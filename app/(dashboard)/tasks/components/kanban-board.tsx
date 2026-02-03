@@ -455,8 +455,8 @@ function DroppableColumn({
     const { setNodeRef } = useDroppable({ id })
 
     return (
-        <div ref={setNodeRef} className="flex flex-col">
-            <div className={`${color} rounded-lg p-3 border mb-3 ${isOver ? 'ring-2 ring-primary' : ''}`}>
+        <div ref={setNodeRef} className="flex flex-col h-[calc(100vh-240px)] font-sans">
+            <div className={`${color} rounded-lg p-3 border mb-3 flex-none ${isOver ? 'ring-2 ring-primary' : ''}`}>
                 <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold text-sm">{label}</h3>
                     <Badge variant="secondary" className="h-5 min-w-5 flex items-center justify-center">
@@ -464,7 +464,7 @@ function DroppableColumn({
                     </Badge>
                 </div>
             </div>
-            <div className="flex-1 space-y-2 min-h-[200px]">
+            <div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-2 space-y-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                 {children}
             </div>
         </div>
