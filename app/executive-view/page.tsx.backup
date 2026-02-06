@@ -1,4 +1,4 @@
-import { getExecutiveData, getAllTasksForExecutive, getTeamPerformance, getTrendAnalysis, getRiskAlerts, getContentPerformance } from './actions'
+import { getExecutiveData, getAllTasksForExecutive } from './actions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { CheckCircle2, AlertCircle, TrendingUp, DollarSign } from 'lucide-react'
@@ -7,10 +7,6 @@ import { cookies } from 'next/headers'
 
 import { MonthPicker } from '@/components/shared/month-picker'
 import { AllTasksDialog } from './components/all-tasks-dialog'
-import { TeamPerformanceCard } from './components/team-performance-card'
-import { TrendAnalysisCard } from './components/trend-analysis-card'
-import { RiskAlertsCard } from './components/risk-alerts-card'
-import { ContentPerformanceCard } from './components/content-performance-card'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,10 +27,6 @@ export default async function ExecutiveDashboardPage({ searchParams }: Executive
 
     const data = await getExecutiveData(targetDate)
     const allTasks = await getAllTasksForExecutive(targetDate)
-    const teamPerformance = await getTeamPerformance(targetDate)
-    const trendAnalysis = await getTrendAnalysis(targetDate)
-    const riskAlerts = await getRiskAlerts(targetDate)
-    const contentPerformance = await getContentPerformance(targetDate)
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -87,7 +79,7 @@ export default async function ExecutiveDashboardPage({ searchParams }: Executive
                                 <div className="text-2xl font-bold text-blue-600">{data.budget.spent.toLocaleString()} đ</div>
                                 <p className="text-xs text-muted-foreground">
                                     {(data.budget.total > 0 ? Math.round((data.budget.spent / data.budget.total) * 100) : 0)}% ngân sách
-                                </p>
+                               </p>
                             </CardContent>
                         </Card>
                         <Card>
@@ -295,31 +287,6 @@ export default async function ExecutiveDashboardPage({ searchParams }: Executive
                             </CardContent>
                         </Card>
                     </div>
-                </section>
-
-                <Separator />
-
-                {/* Section 3: Team & Trend Analytics */}
-                <section>
-                    <h2 className="text-xl font-bold mb-4">Phân tích nhóm</h2>
-                    <div className="grid gap-6 md:grid-cols-3">
-                        <div className="md:col-span-1">
-                            <TeamPerformanceCard members={teamPerformance} />
-                        </div>
-                        <div className="md:col-span-1">
-                            <TrendAnalysisCard data={trendAnalysis} />
-                        </div>
-                        <div className="md:col-span-1">
-                            <RiskAlertsCard risks={riskAlerts} />
-                        </div>
-                    </div>
-                </section>
-
-                <Separator />
-
-                {/* Section 4: Content Performance */}
-                <section>
-                    <ContentPerformanceCard data={contentPerformance} />
                 </section>
             </main>
         </div>

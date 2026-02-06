@@ -218,3 +218,374 @@ export async function getExecutiveData(date?: Date) {
         }
     }
 }
+
+export async function getAllTasksForExecutive(date?: Date) {
+    const supabase = await createAdminClient()
+
+    const targetDate = date || new Date()
+    const year = targetDate.getFullYear()
+    const month = targetDate.getMonth()
+    const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString()
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString()
+
+    // Fetch ALL tasks for the month
+    const { data: allTasks } = await supabase
+        .from('tasks')
+        .select(`
+            id, title, status, due_date, priority,
+            profiles!assigned_to (full_name, position)
+        `)
+        .gte('created_at', startOfMonth)
+        .lte('created_at', endOfMonth)
+        .order('created_at', { ascending: false })
+
+    const detailedTasks = allTasks?.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        status: t.status,
+        due_date: t.due_date,
+        priority: t.priority,
+        assignee_name: t.profiles?.full_name || 'Unassigned',
+        assignee_position: t.profiles?.position || ''
+    })) || []
+
+    return detailedTasks
+}
+
+// ======= NEW ANALYTICS FUNCTIONS =======
+
+export async function getTeamPerformance(date?: Date) {
+    const supabase = await createAdminClient()
+
+    const targetDate = date || new Date()
+    const year = targetDate.getFullYear()
+    const month = targetDate.getMonth()
+    const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString()
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString()
+
+    // Get members who have KPIs in this period
+    const { data: kpisInPeriod } = await supabase
+        .from('kpis')
+        .select('user_id, profiles!user_id (id, full_name, position)')
+        .lte('start_date', targetDate.toISOString().split('T')[0])
+        .gte('end_date', targetDate.toISOString().split('T')[0])
+
+    if (!kpisInPeriod || kpisInPeriod.length === 0) return []
+
+    // Get unique members
+    const uniqueMembersMap = new Map()
+    kpisInPeriod.forEach((kpi: any) => {
+        if (kpi.profiles && kpi.profiles.id) {
+            uniqueMembersMap.set(kpi.profiles.id, kpi.profiles)
+        }
+    })
+    const members = Array.from(uniqueMembersMap.values())
+
+    if (!members || members.length === 0) return []
+
+    // For each member, calculate their task stats
+    const memberStats = await Promise.all(members.map(async (member: any) => {
+        const { data: tasks } = await supabase
+            .from('tasks')
+            .select('id, status')
+            .eq('assigned_to', member.id)
+            .gte('created_at', startOfMonth)
+            .lte('created_at', endOfMonth)
+
+        const total = tasks?.length || 0
+        const completed = tasks?.filter(t => t.status === 'done').length || 0
+        const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+
+        // Get KPIs owned by this member
+        const { data: kpis } = await supabase
+            .from('kpis')
+            .select('current_value, target_value')
+            .eq('user_id', member.id)
+            .lte('start_date', targetDate.toISOString().split('T')[0])
+            .gte('end_date', targetDate.toISOString().split('T')[0])
+
+        let avgKpi = 0
+        if (kpis && kpis.length > 0) {
+            const totalProgress = kpis.reduce((sum, k) => {
+                const progress = k.target_value > 0 ? (k.current_value / k.target_value) * 100 : 0
+                return sum + Math.min(progress, 100)
+            }, 0)
+            avgKpi = Math.round(totalProgress / kpis.length)
+        }
+
+        return {
+            id: member.id,
+            name: member.full_name,
+            position: member.position,
+            tasksTotal: total,
+            tasksCompleted: completed,
+            completionRate,
+            kpiAchievement: avgKpi,
+            performance: (completionRate >= 80 ? 'excellent' : completionRate >= 50 ? 'good' : 'needs_support') as 'excellent' | 'good' | 'needs_support'
+        }
+    }))
+
+    return memberStats
+}
+
+export async function getTrendAnalysis(date?: Date) {
+    const supabase = await createAdminClient()
+
+    const targetDate = date || new Date()
+
+    // Current month
+    const currentYear = targetDate.getFullYear()
+    const currentMonth = targetDate.getMonth()
+    const currentStart = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0)).toISOString()
+    const currentEnd = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999)).toISOString()
+
+    // Previous month
+    const prevDate = new Date(targetDate)
+    prevDate.setMonth(prevDate.getMonth() - 1)
+    const prevYear = prevDate.getFullYear()
+    const prevMonth = prevDate.getMonth()
+    const prevStart = new Date(Date.UTC(prevYear, prevMonth, 1, 0, 0, 0)).toISOString()
+    const prevEnd = new Date(Date.UTC(prevYear, prevMonth + 1, 0, 23, 59, 59, 999)).toISOString()
+
+    // Current month budget
+    const { data: currentExpenses } = await supabase
+        .from('content_items')
+        .select('actual_cost')
+        .gt('actual_cost', 0)
+        .eq('type', 'ad_creative')
+        .gte('scheduled_date', currentStart)
+        .lte('scheduled_date', currentEnd)
+
+    const currentSpent = currentExpenses?.reduce((sum, e) => sum + (e.actual_cost || 0), 0) || 0
+
+    // Previous month budget
+    const { data: prevExpenses } = await supabase
+        .from('content_items')
+        .select('actual_cost')
+        .gt('actual_cost', 0)
+        .eq('type', 'ad_creative')
+        .gte('scheduled_date', prevStart)
+        .lte('scheduled_date', prevEnd)
+
+    const prevSpent = prevExpenses?.reduce((sum, e) => sum + (e.actual_cost || 0), 0) || 0
+
+    // Current month tasks
+    const { data: currentTasks } = await supabase
+        .from('tasks')
+        .select('status')
+        .gte('created_at', currentStart)
+        .lte('created_at', currentEnd)
+
+    const currentTotal = currentTasks?.length || 0
+    const currentDone = currentTasks?.filter(t => t.status === 'done').length || 0
+    const currentTaskRate = currentTotal > 0 ? Math.round((currentDone / currentTotal) * 100) : 0
+
+    // Previous month tasks
+    const { data: prevTasks } = await supabase
+        .from('tasks')
+        .select('status')
+        .gte('created_at', prevStart)
+        .lte('created_at', prevEnd)
+
+    const prevTotal = prevTasks?.length || 0
+    const prevDone = prevTasks?.filter(t => t.status === 'done').length || 0
+    const prevTaskRate = prevTotal > 0 ? Math.round((prevDone / prevTotal) * 100) : 0
+
+    // Current KPIs
+    const { data: currentKpis } = await supabase
+        .from('kpis')
+        .select('current_value, target_value')
+        .lte('start_date', targetDate.toISOString().split('T')[0])
+        .gte('end_date', targetDate.toISOString().split('T')[0])
+
+    let currentKpiAvg = 0
+    if (currentKpis && currentKpis.length > 0) {
+        const total = currentKpis.reduce((sum, k) => {
+            const progress = k.target_value > 0 ? (k.current_value / k.target_value) * 100 : 0
+            return sum + Math.min(progress, 100)
+        }, 0)
+        currentKpiAvg = Math.round(total / currentKpis.length)
+    }
+
+    // Previous KPIs
+    const { data: prevKpis } = await supabase
+        .from('kpis')
+        .select('current_value, target_value')
+        .lte('start_date', prevDate.toISOString().split('T')[0])
+        .gte('end_date', prevDate.toISOString().split('T')[0])
+
+    let prevKpiAvg = 0
+    if (prevKpis && prevKpis.length > 0) {
+        const total = prevKpis.reduce((sum, k) => {
+            const progress = k.target_value > 0 ? (k.current_value / k.target_value) * 100 : 0
+            return sum + Math.min(progress, 100)
+        }, 0)
+        prevKpiAvg = Math.round(total / prevKpis.length)
+    }
+
+    return {
+        budget: {
+            current: currentSpent,
+            previous: prevSpent,
+            change: currentSpent - prevSpent,
+            changePercent: prevSpent > 0 ? Math.round(((currentSpent - prevSpent) / prevSpent) * 100) : 0
+        },
+        taskCompletion: {
+            current: currentTaskRate,
+            previous: prevTaskRate,
+            change: currentTaskRate - prevTaskRate
+        },
+        kpiAchievement: {
+            current: currentKpiAvg,
+            previous: prevKpiAvg,
+            change: currentKpiAvg - prevKpiAvg
+        }
+    }
+}
+
+export async function getRiskAlerts(date?: Date) {
+    const supabase = await createAdminClient()
+
+    const targetDate = date || new Date()
+    const year = targetDate.getFullYear()
+    const month = targetDate.getMonth()
+    const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString()
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString()
+
+    const risks: any[] = []
+
+    // 1. Campaigns near budget limit (>90%)
+    const { data: campaigns } = await supabase
+        .from('campaigns')
+        .select('id, name, budget_total')
+        .neq('status', 'trash')
+
+    if (campaigns) {
+        const { data: expenses } = await supabase
+            .from('content_items')
+            .select('actual_cost, campaign_id')
+            .gt('actual_cost', 0)
+            .eq('type', 'ad_creative')
+            .gte('scheduled_date', startOfMonth)
+            .lte('scheduled_date', endOfMonth)
+
+        const campaignSpending: Record<string, number> = {}
+        expenses?.forEach(e => {
+            if (e.campaign_id) {
+                campaignSpending[e.campaign_id] = (campaignSpending[e.campaign_id] || 0) + e.actual_cost
+            }
+        })
+
+        campaigns.forEach(c => {
+            const spent = campaignSpending[c.id] || 0
+            const budget = Number(c.budget_total) || 0
+            const percent = budget > 0 ? (spent / budget) * 100 : 0
+
+            if (percent > 90) {
+                risks.push({
+                    type: 'budget',
+                    severity: percent > 100 ? 'critical' : 'warning',
+                    message: `Chiến dịch "${c.name}" đã dùng ${Math.round(percent)}% ngân sách`,
+                    details: { campaignName: c.name, percent: Math.round(percent) }
+                })
+            }
+        })
+    }
+
+    // 2. Overdue tasks
+    const now = new Date().toISOString()
+    const { data: overdueTasks } = await supabase
+        .from('tasks')
+        .select('id, title, due_date, profiles!assigned_to (full_name)')
+        .lt('due_date', now)
+        .neq('status', 'done')
+        .limit(10)
+
+    overdueTasks?.forEach((t: any) => {
+        risks.push({
+            type: 'task',
+            severity: 'warning',
+            message: `Task "${t.title}" đã quá hạn (${t.profiles?.full_name || 'Unassigned'})`,
+            details: { taskTitle: t.title, assignee: t.profiles?.full_name }
+        })
+    })
+
+    // 3. At-risk KPIs (<50% progress when >70% time elapsed)
+    const { data: kpis } = await supabase
+        .from('kpis')
+        .select('id, name, current_value, target_value, start_date, end_date')
+        .lte('start_date', targetDate.toISOString().split('T')[0])
+        .gte('end_date', targetDate.toISOString().split('T')[0])
+
+    kpis?.forEach(k => {
+        const progress = k.target_value > 0 ? (k.current_value / k.target_value) * 100 : 0
+        const startTime = new Date(k.start_date).getTime()
+        const endTime = new Date(k.end_date).getTime()
+        const currentTime = targetDate.getTime()
+        const timeElapsed = ((currentTime - startTime) / (endTime - startTime)) * 100
+
+        if (timeElapsed > 70 && progress < 50) {
+            risks.push({
+                type: 'kpi',
+                severity: 'warning',
+                message: `KPI "${k.name}" có nguy cơ fail (${Math.round(progress)}% sau ${Math.round(timeElapsed)}% thời gian)`,
+                details: { kpiName: k.name, progress: Math.round(progress), timeElapsed: Math.round(timeElapsed) }
+            })
+        }
+    })
+
+    return risks
+}
+
+export async function getContentPerformance(date?: Date) {
+    const supabase = await createAdminClient()
+
+    const targetDate = date || new Date()
+    const year = targetDate.getFullYear()
+    const month = targetDate.getMonth()
+    const startOfMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0)).toISOString()
+    const endOfMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999)).toISOString()
+
+    // Count by status
+    const { data: allContent } = await supabase
+        .from('content_items')
+        .select('id, status, platform')
+        .gte('scheduled_date', startOfMonth)
+        .lte('scheduled_date', endOfMonth)
+
+    const byStatus = {
+        published: allContent?.filter(c => c.status === 'published').length || 0,
+        draft: allContent?.filter(c => c.status === 'draft').length || 0,
+        review: allContent?.filter(c => c.status === 'review').length || 0
+    }
+
+    // Count by platform
+    const platformCounts: Record<string, number> = {}
+    allContent?.forEach(c => {
+        if (c.platform) {
+            platformCounts[c.platform] = (platformCounts[c.platform] || 0) + 1
+        }
+    })
+
+    const byPlatform = Object.entries(platformCounts).map(([platform, count]) => ({
+        platform,
+        count
+    }))
+
+    // Recent published
+    const { data: recentPublished } = await supabase
+        .from('content_items')
+        .select('id, title, platform, scheduled_date')
+        .eq('status', 'published')
+        .gte('scheduled_date', startOfMonth)
+        .lte('scheduled_date', endOfMonth)
+        .order('scheduled_date', { ascending: false })
+        .limit(10)
+
+    return {
+        byStatus,
+        byPlatform,
+        recentPublished: recentPublished || [],
+        total: allContent?.length || 0
+    }
+}
