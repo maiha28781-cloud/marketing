@@ -16,6 +16,9 @@ export default function ExecutiveLoginPage() {
         if (result?.error) {
             setError(result.error)
             setLoading(false)
+        } else if (result?.success) {
+            // Navigate client-side after cookie is set
+            window.location.href = '/executive-view'
         }
     }
 

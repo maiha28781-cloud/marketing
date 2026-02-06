@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-    // Executive View Protection
+    // Executive View Protection - Handle BEFORE Supabase auth
     if (request.nextUrl.pathname.startsWith('/executive-view')) {
         // Allow public access to login page
         if (request.nextUrl.pathname === '/executive-view/login') {
@@ -15,8 +15,12 @@ export async function middleware(request: NextRequest) {
             url.pathname = '/executive-view/login'
             return NextResponse.redirect(url)
         }
+
+        // Executive session is valid, allow access without Supabase auth
+        return NextResponse.next()
     }
 
+    // For all other routes, use Supabase auth
     return await updateSession(request)
 }
 

@@ -24,7 +24,8 @@ export async function verifyExecutivePassword(formData: FormData) {
         path: '/',
     })
 
-    redirect('/executive-view')
+    // Return success so client can navigate
+    return { success: true }
 }
 
 // Admin client to bypass RLS for public view
