@@ -162,18 +162,22 @@ export async function calculateKPIProgress(supabase: any, kpis: KPI[], reference
                 .lte('scheduled_date', kpi.end_date + 'T23:59:59')
 
 
+
+
             // Apply content type filter if specified
-            if (contentType && contentType !== 'all') {
-                // Use ilike for case-insensitive matching
-                // Also handle simplified types (e.g. 'social_post' vs 'Social Post')
-                if (contentType.includes('_')) {
-                    // If type has underscore (e.g. social_post), try to match it or space version
-                    const spaceVersion = contentType.replace(/_/g, ' ')
-                    query = query.or(`type.eq.${contentType},type.ilike.${spaceVersion}`)
-                } else {
-                    query = query.ilike('type', contentType)
-                }
+            if (contentType === 'content_organic') {
+                // Match blog_post, video, or social_post (organic content only, no ads)
+                query = query.in('type', ['blog_post', 'video', 'social_post'])
+            } else if (contentType === 'ad_creative') {
+                // Match ad_creative exactly (database stores as 'ad_creative')
+                query = query.eq('type', 'ad_creative')
+            } else if (contentType && contentType !== 'all') {
+                // Single specific type (blog_post, video, social_post)
+                query = query.eq('type', contentType)
             }
+            // If contentType is 'all' or undefined, don't filter - count everything
+
+
 
             const { count: contentCount } = await query
             count = contentCount || 0

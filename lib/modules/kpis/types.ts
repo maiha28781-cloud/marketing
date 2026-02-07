@@ -11,7 +11,7 @@ export type KPIPeriod = 'weekly' | 'monthly' | 'quarterly' | 'yearly'
 // New tracking system types
 export type TrackingSource = 'tasks' | 'content'
 
-export type ContentType = 'blog_post' | 'video' | 'social_post' | 'all'
+export type ContentType = 'blog_post' | 'video' | 'social_post' | 'content_organic' | 'ad_creative' | 'all'
 
 export interface TrackingFilter {
     content_type?: ContentType

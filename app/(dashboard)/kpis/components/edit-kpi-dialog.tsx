@@ -43,7 +43,9 @@ const contentTypeOptions: { value: ContentType; label: string; unit: string }[] 
     { value: 'blog_post', label: 'Bài viết', unit: 'bài viết' },
     { value: 'video', label: 'Video', unit: 'video' },
     { value: 'social_post', label: 'Hình ảnh/Social Post', unit: 'bài đăng' },
-    { value: 'all', label: 'Tất cả loại content', unit: 'items' },
+    { value: 'content_organic', label: 'Tất cả loại content (Blog + Video + Social)', unit: 'content' },
+    { value: 'ad_creative', label: 'Ad Creative', unit: 'ad creative' },
+    { value: 'all', label: 'All (Tất cả bao gồm Ad Creative)', unit: 'items' },
 ]
 
 const periodOptions: { value: KPIPeriod; label: string }[] = [
