@@ -10,6 +10,7 @@ interface TeamMember {
     position: string
     tasksTotal: number
     tasksCompleted: number
+    kpiUnit: string
     completionRate: number
     kpiAchievement: number
     performance: 'excellent' | 'good' | 'needs_support'
@@ -47,13 +48,13 @@ export function TeamPerformanceCard({ members }: TeamPerformanceCardProps) {
                                 </div>
                                 <div className="text-right">
                                     <div className="text-sm font-bold">{member.completionRate}%</div>
-                                    <div className="text-xs text-muted-foreground">{member.tasksCompleted}/{member.tasksTotal} task</div>
+                                    <div className="text-xs text-muted-foreground">{member.tasksCompleted}/{member.tasksTotal} {member.kpiUnit}</div>
                                 </div>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-2">
                                 <div
                                     className={`h-full rounded-full ${member.completionRate >= 80 ? 'bg-green-500' :
-                                            member.completionRate >= 50 ? 'bg-blue-500' : 'bg-red-500'
+                                        member.completionRate >= 50 ? 'bg-blue-500' : 'bg-red-500'
                                         }`}
                                     style={{ width: `${member.completionRate}%` }}
                                 />

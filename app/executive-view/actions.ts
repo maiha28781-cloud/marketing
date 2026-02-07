@@ -296,32 +296,47 @@ export async function getTeamPerformance(date?: Date) {
         const completed = tasks?.filter(t => t.status === 'done').length || 0
         const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
 
-        // Get KPIs owned by this member
-        const { data: kpis } = await supabase
+        // Get KPIs owned by this member (with all fields for live calculation)
+        const { data: rawKpis } = await supabase
             .from('kpis')
-            .select('current_value, target_value')
+            .select('*') // Need all fields for calculateKPIProgress
             .eq('user_id', member.id)
             .lte('start_date', targetDate.toISOString().split('T')[0])
             .gte('end_date', targetDate.toISOString().split('T')[0])
 
         let avgKpi = 0
-        if (kpis && kpis.length > 0) {
-            const totalProgress = kpis.reduce((sum, k) => {
+        let primaryKpi: any = null
+
+        if (rawKpis && rawKpis.length > 0) {
+            // Calculate live progress using the same function as KPI page
+            // @ts-ignore
+            const calculatedKpis = await calculateKPIProgress(supabase, rawKpis, targetDate)
+
+            // Find primary KPI (auto-tracked one, or first one)
+            primaryKpi = calculatedKpis.find(k => k.auto_track) || calculatedKpis[0]
+
+            const totalProgress = calculatedKpis.reduce((sum, k) => {
                 const progress = k.target_value > 0 ? (k.current_value / k.target_value) * 100 : 0
                 return sum + Math.min(progress, 100)
             }, 0)
-            avgKpi = Math.round(totalProgress / kpis.length)
+            avgKpi = Math.round(totalProgress / calculatedKpis.length)
         }
+
+        // Calculate final completion rate (use KPI if available, otherwise task completion)
+        const finalCompletionRate = primaryKpi && primaryKpi.target_value > 0
+            ? Math.round((primaryKpi.current_value / primaryKpi.target_value) * 100)
+            : completionRate
 
         return {
             id: member.id,
             name: member.full_name,
             position: member.position,
-            tasksTotal: total,
-            tasksCompleted: completed,
-            completionRate,
+            tasksTotal: primaryKpi ? primaryKpi.target_value : total,
+            tasksCompleted: primaryKpi ? primaryKpi.current_value : completed,
+            kpiUnit: primaryKpi ? (primaryKpi.unit || 'items') : 'task',
+            completionRate: finalCompletionRate,
             kpiAchievement: avgKpi,
-            performance: (completionRate >= 80 ? 'excellent' : completionRate >= 50 ? 'good' : 'needs_support') as 'excellent' | 'good' | 'needs_support'
+            performance: (finalCompletionRate >= 80 ? 'excellent' : finalCompletionRate >= 50 ? 'good' : 'needs_support') as 'excellent' | 'good' | 'needs_support'
         }
     }))
 
