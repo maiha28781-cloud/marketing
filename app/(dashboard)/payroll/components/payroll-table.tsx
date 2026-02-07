@@ -33,6 +33,7 @@ export function PayrollTable({ members, contentItems, activeKPIs, currentUserRol
         let totalTasksDone = 0
         let coefficient = 0
         let kpiBonusBase = 0
+        let kpiUnit = 'tasks' // Default unit
 
         // Get the first KPI (prefer auto-tracked, but fallback to manual)
         const primaryKPI = memberKPIs.find(kpi => kpi.auto_track) || memberKPIs[0]
@@ -41,6 +42,7 @@ export function PayrollTable({ members, contentItems, activeKPIs, currentUserRol
             kpiTarget = primaryKPI.target_value
             totalTasksDone = primaryKPI.current_value
             kpiBonusBase = member.kpi_bonus || primaryKPI.bonus_value || 0
+            kpiUnit = primaryKPI.unit || 'items' // Get unit from KPI
 
             const kpiPercent = kpiTarget > 0 ? (totalTasksDone / kpiTarget) * 100 : 0
 
@@ -114,7 +116,8 @@ export function PayrollTable({ members, contentItems, activeKPIs, currentUserRol
                 insuranceDeduction,
                 taxDeduction,
                 netPay,
-                productCounts
+                productCounts,
+                kpiUnit // Add unit to calculated object
             }
         }
     })
@@ -157,7 +160,7 @@ export function PayrollTable({ members, contentItems, activeKPIs, currentUserRol
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
-                                            <span className="font-semibold">{row.calculated.kpiTarget} tasks</span>
+                                            <span className="font-semibold">{row.calculated.kpiTarget} {row.calculated.kpiUnit}</span>
                                             <span className="text-xs text-muted-foreground">
                                                 Base: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(row.calculated.kpiBonusBase)}
                                             </span>
