@@ -48,8 +48,8 @@ export default async function CalendarPage({
         .single()
 
     return (
-        <div className="flex flex-col h-full">
-            <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
+        <div className="flex flex-col" style={{ height: '100dvh' }}>
+            <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6">
                 <SidebarTrigger />
                 <Separator orientation="vertical" className="h-6" />
                 <div className="flex items-center gap-3">
@@ -66,7 +66,7 @@ export default async function CalendarPage({
                 </div>
             </header>
 
-            <main className="flex-1 p-6 overflow-hidden min-w-0">
+            <main className="flex-1 min-h-0 p-4 overflow-hidden">
                 <Suspense fallback={<div>Loading calendar...</div>}>
                     <CalendarView
                         items={contentItems}

@@ -228,7 +228,7 @@ export function CalendarView({ items, campaigns, members, userRole, showTabs = t
     const mediaItems = events.filter(e => e.resource.type === 'ad_creative')
 
     const CalendarComponent = ({ eventsList }: { eventsList: any[] }) => (
-        <div className="bg-card rounded-md border shadow-sm flex flex-col" style={{ height: 'calc(100vh - 220px)', minHeight: 500 }}>
+        <div className="bg-card rounded-md border shadow-sm" style={{ height: 'calc(100dvh - 160px)', minHeight: 480 }}>
             <DnDCalendar
                 localizer={localizer}
                 events={eventsList}

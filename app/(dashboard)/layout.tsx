@@ -28,9 +28,9 @@ export default async function DashboardLayout({
     return (
         <SidebarProvider>
             <AppSidebar user={user} profile={profile} />
-            <SidebarInset>
+            <SidebarInset className="min-w-0 overflow-hidden">
                 <DashboardShell>
-                    <div className="pb-16 md:pb-0">
+                    <div className="pb-16 md:pb-0 min-w-0">
                         {children}
                     </div>
                 </DashboardShell>
