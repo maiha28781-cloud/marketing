@@ -11,6 +11,8 @@ export interface Task {
     created_at: string
     updated_at: string
     submission_notes?: string | null
+    sprint_id?: string | null
+    story_points?: number | null
     // Joined data
     assignee?: {
         id: string

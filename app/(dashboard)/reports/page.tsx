@@ -5,8 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { WeeklyReport as WeeklyReportView } from './components/weekly-report'
 import { MonthlyReport as MonthlyReportView } from './components/monthly-report'
 import { FileText } from 'lucide-react'
-
 import { MonthPicker } from '@/components/shared/month-picker'
+import { PrintButton } from '@/components/shared/print-button'
+import { ReportExportButtons } from './components/report-export-buttons'
 
 export default async function ReportsPage({
     searchParams,
@@ -22,7 +23,7 @@ export default async function ReportsPage({
 
     return (
         <div className="flex flex-col">
-            <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
+            <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6 print:hidden">
                 <SidebarTrigger />
                 <Separator orientation="vertical" className="h-6" />
                 <div className="flex flex-1 items-center justify-between">
@@ -35,18 +36,22 @@ export default async function ReportsPage({
                             </p>
                         </div>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2">
                         <MonthPicker />
+                        <PrintButton />
                     </div>
                 </div>
             </header>
 
             <main className="flex-1 p-6">
                 <Tabs defaultValue="weekly" className="space-y-6">
-                    <TabsList>
-                        <TabsTrigger value="weekly">Tuần này</TabsTrigger>
-                        <TabsTrigger value="monthly">Tháng này</TabsTrigger>
-                    </TabsList>
+                    <div className="flex items-center justify-between print:hidden">
+                        <TabsList>
+                            <TabsTrigger value="weekly">Tuần này</TabsTrigger>
+                            <TabsTrigger value="monthly">Tháng này</TabsTrigger>
+                        </TabsList>
+                        <ReportExportButtons weeklyReport={weeklyReport} monthlyReport={monthlyReport} />
+                    </div>
 
                     <TabsContent value="weekly" className="space-y-6">
                         <WeeklyReportView report={weeklyReport} />

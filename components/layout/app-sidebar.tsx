@@ -12,6 +12,7 @@ import {
     Target,
     Share2,
     BadgeDollarSign,
+    Zap,
 } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -60,6 +61,11 @@ const menuItems = [
         icon: CheckSquare,
         href: '/tasks',
         badge: 'new',
+    },
+    {
+        title: 'Sprints',
+        icon: Zap,
+        href: '/sprints',
     },
     {
         title: 'KPIs',

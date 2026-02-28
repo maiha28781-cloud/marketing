@@ -321,7 +321,12 @@ export function KanbanBoard({ tasks, teamMembers, currentUserId, userRole }: Kan
         const result = await deleteTask(taskToDelete)
 
         if (result.error) {
-            alert(`Lỗi: ${result.error}`)
+            const { toast } = await import('@/hooks/use-toast')
+            toast({
+                title: "Lỗi xóa task",
+                description: result.error,
+                variant: "destructive"
+            })
         }
 
         setIsDeleting(false)

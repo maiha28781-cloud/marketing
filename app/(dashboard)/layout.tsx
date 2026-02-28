@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { DashboardShell } from '@/components/layout/dashboard-shell'
 
 
 
@@ -26,10 +27,13 @@ export default async function DashboardLayout({
 
     return (
         <SidebarProvider>
-
             <AppSidebar user={user} profile={profile} />
             <SidebarInset>
-                {children}
+                <DashboardShell>
+                    <div className="pb-16 md:pb-0">
+                        {children}
+                    </div>
+                </DashboardShell>
             </SidebarInset>
         </SidebarProvider>
     )
