@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Calendar, dateFnsLocalizer, View, Views } from 'react-big-calendar'
+import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay, addHours } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { ContentItem } from '@/lib/modules/calendar/types'
@@ -68,7 +68,6 @@ const DnDCalendar = withDragAndDrop(Calendar)
 
 export function CalendarView({ items, campaigns, members, userRole, showTabs = true, initialDate }: CalendarViewProps) {
     const { toast } = useToast()
-    const [view, setView] = useState<View>(Views.MONTH)
     const [date, setDate] = useState(initialDate || new Date())
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
@@ -229,15 +228,16 @@ export function CalendarView({ items, campaigns, members, userRole, showTabs = t
     const mediaItems = events.filter(e => e.resource.type === 'ad_creative')
 
     const CalendarComponent = ({ eventsList }: { eventsList: any[] }) => (
-        <div className="bg-card rounded-md border p-4 shadow-sm h-[600px]">
+        <div className="bg-card rounded-md border shadow-sm flex flex-col" style={{ height: 'calc(100vh - 220px)', minHeight: 500 }}>
             <DnDCalendar
                 localizer={localizer}
                 events={eventsList}
                 startAccessor={(event: any) => event.start}
                 endAccessor={(event: any) => event.end}
-                style={{ height: '100%' }}
-                view={view}
-                onView={setView}
+                style={{ height: '100%', width: '100%' }}
+                view={Views.MONTH}
+                onView={() => {}}
+                views={[Views.MONTH]}
                 date={date}
                 onNavigate={setDate}
                 selectable

@@ -66,7 +66,7 @@ export default async function CalendarPage({
                 </div>
             </header>
 
-            <main className="flex-1 p-6 overflow-hidden">
+            <main className="flex-1 p-6 overflow-hidden min-w-0">
                 <Suspense fallback={<div>Loading calendar...</div>}>
                     <CalendarView
                         items={contentItems}

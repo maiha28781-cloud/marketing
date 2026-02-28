@@ -1,10 +1,19 @@
 .rbc-calendar {
     font-family: inherit;
     min-height: 500px;
+    overflow: hidden;
+    width: 100%;
 }
 
 .rbc-toolbar {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Hide view switcher buttons (Month/Week/Day/Agenda) since we lock to Month view */
+.rbc-toolbar .rbc-btn-group:last-child {
+    display: none;
 }
 
 .rbc-toolbar button {
