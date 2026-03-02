@@ -74,6 +74,14 @@ export async function getUserKPIs(userId: string): Promise<KPI[]> {
  * Get active KPIs (within date range relative to reference date)
  * @param referenceDate Optional date for historical view (defaults to now)
  */
+// Format date as YYYY-MM-DD using local time (not UTC) to avoid timezone shift
+function toLocalDateStr(date: Date): string {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
 export async function getActiveKPIs(referenceDate?: Date): Promise<KPI[]> {
     const supabase = await createClient()
 
@@ -83,15 +91,14 @@ export async function getActiveKPIs(referenceDate?: Date): Promise<KPI[]> {
     if (referenceDate) {
         const year = referenceDate.getFullYear()
         const month = referenceDate.getMonth()
-        // First and last day of the selected month
-        monthStart = new Date(year, month, 1).toISOString().split('T')[0]
-        monthEnd = new Date(year, month + 1, 0).toISOString().split('T')[0]
+        monthStart = toLocalDateStr(new Date(year, month, 1))
+        monthEnd = toLocalDateStr(new Date(year, month + 1, 0))
     } else {
         const vnDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }))
         const year = vnDate.getFullYear()
         const month = vnDate.getMonth()
-        monthStart = new Date(year, month, 1).toISOString().split('T')[0]
-        monthEnd = new Date(year, month + 1, 0).toISOString().split('T')[0]
+        monthStart = toLocalDateStr(new Date(year, month, 1))
+        monthEnd = toLocalDateStr(new Date(year, month + 1, 0))
     }
 
     // KPI overlaps with the selected month if: start_date <= monthEnd AND end_date >= monthStart

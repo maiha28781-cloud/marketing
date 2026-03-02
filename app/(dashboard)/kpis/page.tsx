@@ -13,7 +13,7 @@ import { MonthPicker } from '@/components/shared/month-picker'
 export const dynamic = 'force-dynamic'
 
 interface KPIsPageProps {
-    searchParams: { [key: string]: string | string[] | undefined }
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export default async function KPIsPage({ searchParams }: KPIsPageProps) {
@@ -37,9 +37,15 @@ export default async function KPIsPage({ searchParams }: KPIsPageProps) {
         .select('id, full_name, email, position')
         .order('full_name')
 
-    // Parse date filter
-    const monthParam = typeof searchParams.month === 'string' ? searchParams.month : undefined
-    const referenceDate = monthParam ? new Date(`${monthParam}-01`) : undefined
+    // Parse date filter — await searchParams (Next.js 15)
+    const params = await searchParams
+    const monthParam = typeof params.month === 'string' ? params.month : undefined
+    // Parse as local date (not UTC) to avoid timezone shift
+    let referenceDate: Date | undefined
+    if (monthParam) {
+        const [year, month] = monthParam.split('-').map(Number)
+        referenceDate = new Date(year, month - 1, 1)
+    }
 
     const kpis = await getActiveKPIs(referenceDate)
     const stats = await getKPIStats(referenceDate)
