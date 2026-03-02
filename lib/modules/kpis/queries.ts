@@ -77,28 +77,24 @@ export async function getUserKPIs(userId: string): Promise<KPI[]> {
 export async function getActiveKPIs(referenceDate?: Date): Promise<KPI[]> {
     const supabase = await createClient()
 
-    // Determine the reference date (VN timezone for consistency)
-    let targetDateStr: string
+    let monthStart: string
+    let monthEnd: string
 
     if (referenceDate) {
-        // If specific date provided (e.g. from picker), use it
-        targetDateStr = referenceDate.toISOString().split('T')[0]
+        const year = referenceDate.getFullYear()
+        const month = referenceDate.getMonth()
+        // First and last day of the selected month
+        monthStart = new Date(year, month, 1).toISOString().split('T')[0]
+        monthEnd = new Date(year, month + 1, 0).toISOString().split('T')[0]
     } else {
-        // Default to "today" in VN time
-        const vnDate = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' })
-        targetDateStr = new Date(vnDate).toISOString().split('T')[0]
+        const vnDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }))
+        const year = vnDate.getFullYear()
+        const month = vnDate.getMonth()
+        monthStart = new Date(year, month, 1).toISOString().split('T')[0]
+        monthEnd = new Date(year, month + 1, 0).toISOString().split('T')[0]
     }
 
-    // Determine the month boundaries for the target date
-    // We want to find active KPIs that overlap with this month
-    // Logic: KPI Start <= Month End AND KPI End >= Month Start
-
-    // For simplicity, we stick to the existing "active on this specific day" logic first
-    // But for historical view, we often select the 1st of the month.
-    // Let's assume if referenceParam is passed, we check if KPI is active *at any point* in that month?
-    // OR just keep it simple: "Active on the selected reference date". 
-    // Since MonthPicker selects the 1st of the month, let's stick to "Active on Reference Date".
-
+    // KPI overlaps with the selected month if: start_date <= monthEnd AND end_date >= monthStart
     const { data, error } = await supabase
         .from('kpis')
         .select(`
@@ -110,8 +106,8 @@ export async function getActiveKPIs(referenceDate?: Date): Promise<KPI[]> {
         position
       )
     `)
-        .lte('start_date', targetDateStr)
-        .gte('end_date', targetDateStr)
+        .lte('start_date', monthEnd)
+        .gte('end_date', monthStart)
         .order('created_at', { ascending: false })
 
     if (error) {
@@ -119,8 +115,6 @@ export async function getActiveKPIs(referenceDate?: Date): Promise<KPI[]> {
         return []
     }
 
-    // Auto-track logic
-    // Pass the reference date to calculate progress correctly for that period
     return await calculateKPIProgress(supabase, data, referenceDate)
 }
 
@@ -241,8 +235,8 @@ export async function getKPIById(id: string): Promise<KPI | null> {
 /**
  * Get KPI statistics
  */
-export async function getKPIStats(): Promise<KPIStats> {
-    const kpis = await getActiveKPIs()
+export async function getKPIStats(referenceDate?: Date): Promise<KPIStats> {
+    const kpis = await getActiveKPIs(referenceDate)
 
     const stats = kpis.reduce(
         (acc, kpi) => {
@@ -273,8 +267,8 @@ export async function getKPIStats(): Promise<KPIStats> {
 /**
  * Get KPI summary by user
  */
-export async function getKPISummaryByUser(): Promise<KPISummary[]> {
-    const kpis = await getActiveKPIs()
+export async function getKPISummaryByUser(referenceDate?: Date): Promise<KPISummary[]> {
+    const kpis = await getActiveKPIs(referenceDate)
 
     // Group by user
     const userMap = new Map<string, KPISummary>()

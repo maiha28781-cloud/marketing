@@ -41,9 +41,9 @@ export default async function KPIsPage({ searchParams }: KPIsPageProps) {
     const monthParam = typeof searchParams.month === 'string' ? searchParams.month : undefined
     const referenceDate = monthParam ? new Date(`${monthParam}-01`) : undefined
 
-    const kpis = await getActiveKPIs(referenceDate)  // Use getActiveKPIs for auto-track support!
-    const stats = await getKPIStats()
-    const summaries = await getKPISummaryByUser()
+    const kpis = await getActiveKPIs(referenceDate)
+    const stats = await getKPIStats(referenceDate)
+    const summaries = await getKPISummaryByUser(referenceDate)
 
     return (
         <div className="flex flex-col">
